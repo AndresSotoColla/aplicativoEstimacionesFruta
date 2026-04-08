@@ -38,6 +38,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.List
+import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -660,23 +661,23 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     Text("Fruta Calidad", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    CounterRow("C5", c5) { c5 = it }
+                    ElegantCounter("C5", c5) { c5 = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("C6", c6) { c6 = it }
+                    ElegantCounter("C6", c6) { c6 = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("C7", c7) { c7 = it }
+                    ElegantCounter("C7", c7) { c7 = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("C8", c8) { c8 = it }
+                    ElegantCounter("C8", c8) { c8 = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("C9", c9) { c9 = it }
+                    ElegantCounter("C9", c9) { c9 = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("C10", c10) { c10 = it }
+                    ElegantCounter("C10", c10) { c10 = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("C8P", c8p) { c8p = it }
+                    ElegantCounter("C8P", c8p) { c8p = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("Guapita", guapita) { guapita = it }
+                    ElegantCounter("Guapita", guapita) { guapita = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("Baby Guapa", babyGuapa) { babyGuapa = it }
+                    ElegantCounter("Baby Guapa", babyGuapa) { babyGuapa = it }
                 }
             }
             
@@ -692,17 +693,17 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     Text("Fruta No Recuperada", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    CounterRow("Ausente", ausente) { ausente = it }
+                    ElegantCounter("Ausente", ausente) { ausente = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("Daño", dano) { dano = it }
+                    ElegantCounter("Daño", dano) { dano = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("Sin Inducir", sinInducir) { sinInducir = it }
+                    ElegantCounter("Sin Inducir", sinInducir) { sinInducir = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("Bajo Peso", bajoPeso) { bajoPeso = it }
+                    ElegantCounter("Bajo Peso", bajoPeso) { bajoPeso = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("Muestreo", muestreo) { muestreo = it }
+                    ElegantCounter("Muestreo", muestreo) { muestreo = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("Fruta Joven", frutaJoven) { frutaJoven = it }
+                    ElegantCounter("Fruta Joven", frutaJoven) { frutaJoven = it }
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
