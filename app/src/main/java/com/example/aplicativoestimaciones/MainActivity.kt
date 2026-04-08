@@ -53,24 +53,37 @@ data class BloqueData(
 fun readCsvData(filePath: String): List<BloqueData> {
     val list = mutableListOf<BloqueData>()
     val file = File(filePath)
-    if (!file.exists()) return list
+    
+    // Add some fallback data so the user sees something even if file isn't found
+    val fallback = listOf(
+        BloqueData("Bloque 1", "Grupo Forza A"),
+        BloqueData("Bloque 2", "Grupo Forza A"),
+        BloqueData("Bloque 10", "Grupo Forza B"),
+        BloqueData("Bloque 15", "Grupo Forza B")
+    )
+    
+    if (!file.exists()) return fallback
     
     try {
         BufferedReader(FileReader(file)).use { reader ->
-            var line: String? = reader.readLine() // Read header
+            var line: String? = reader.readLine() // Skip header
             while (reader.readLine().also { line = it } != null) {
-                val tokens = line?.split(",") ?: continue
+                // Handle both comma and semicolon
+                val tokens = line?.split(Regex("[,;]")) ?: continue
                 if (tokens.size >= 5) {
                     val bloque = tokens[0].trim().removeSurrounding("\"")
                     val gf = tokens[4].trim().removeSurrounding("\"")
-                    list.add(BloqueData(bloque, gf))
+                    if (bloque.isNotEmpty() && gf.isNotEmpty()) {
+                        list.add(BloqueData(bloque, gf))
+                    }
                 }
             }
         }
     } catch (e: Exception) {
         e.printStackTrace()
     }
-    return list
+    
+    return if (list.isEmpty()) fallback else list
 }
 
 class MainActivity : ComponentActivity() {
@@ -167,8 +180,8 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
 
     var semana by remember { mutableStateOf(currentWeek) }
     var grupoForza by remember { mutableStateOf("") }
-    var lote by remember { mutableStateOf("") }
     var bloque by remember { mutableStateOf("") }
+    // var lote removed
     
     // Dropdown States
     var expandedGrupo by remember { mutableStateOf(false) }
@@ -353,19 +366,6 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     }
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    OutlinedTextField(
-                        value = lote,
-                        onValueChange = { input ->
-                            if (input.isEmpty() || (input.toIntOrNull() != null && input.toInt() in 1..87)) {
-                                lote = input
-                            }
-                        },
-                        label = { Text("Lote (1-87)") },
-                        modifier = Modifier.fillMaxWidth(),
-                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
 
                     ExposedDropdownMenuBox(
                         expanded = expandedBloque,
