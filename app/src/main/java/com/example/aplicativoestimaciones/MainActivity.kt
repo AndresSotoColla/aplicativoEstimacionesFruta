@@ -20,6 +20,7 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -35,6 +36,7 @@ import java.util.Locale
 val CALIBRES = listOf("C5", "C6", "C7", "C8", "C9", "C10", "C8P", "Guapita", "Baby Guapa")
 val DEFECTOS = listOf("Enferma", "Quema Sol Severo", "Deforme", "Daño Insecto", "Daño Mecánico")
 val FUERA_ESPEC_CATS = listOf("Cuello", "Cónica", "Cicatriz", "Base café", "Cónica Inclinada", "Corona Pequeña", "Corona Grande", "Corona Múltiple", "Cochinilla", "Off Color", "Quema Sol Leve")
+val FUERA_ESPEC_SINGLE = "Deforme"
 val ESPEC_TYPES = listOf("Tolerable", "No Tolerable")
 
 class MainActivity : ComponentActivity() {
@@ -155,16 +157,22 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
         }
     }
     
-    // Counters for Fuera Especificación
+    // Counters for Fuera Especificación (~200 items)
     val fueraEspecificacionCounters = remember { mutableStateMapOf<String, Int>() }
-    var deformeFuera by remember { mutableIntStateOf(0) }
     
     LaunchedEffect(Unit) {
         if (fueraEspecificacionCounters.isEmpty()) {
+            // Default 11 categories (Dual counter per calibre)
             FUERA_ESPEC_CATS.forEach { cat ->
-                ESPEC_TYPES.forEach { type ->
-                    fueraEspecificacionCounters["${cat}_${type}"] = 0
+                CALIBRES.forEach { calibre ->
+                    ESPEC_TYPES.forEach { type ->
+                        fueraEspecificacionCounters["${cat}_${calibre}_${type}"] = 0
+                    }
                 }
+            }
+            // Deforme category (Single counter per calibre)
+            CALIBRES.forEach { calibre ->
+                fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] = 0
             }
         }
     }
@@ -408,21 +416,28 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     Text("Fruta Fuera Especificación", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(12.dp))
                     
-                    CounterRow("Deforme", deformeFuera) { deformeFuera = it }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 1.dp)
-                    
-                    FUERA_ESPEC_CATS.forEachIndexed { index, cat ->
-                        FueraEspecificacionCategoryNode(
-                            category = cat,
-                            onValueChange = { type, newValue ->
-                                fueraEspecificacionCounters["${cat}_${type}"] = newValue
-                            },
-                            currentTolerable = fueraEspecificacionCounters["${cat}_Tolerable"] ?: 0,
-                            currentNoTolerable = fueraEspecificacionCounters["${cat}_No Tolerable"] ?: 0
-                        )
-                        if (index < FUERA_ESPEC_CATS.size - 1) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
+                    // Single counter category: Deforme
+                    FueraEspecificacionDeepCategorySection(
+                        category = FUERA_ESPEC_SINGLE,
+                        isDouble = false,
+                        counters = fueraEspecificacionCounters,
+                        onValueChange = { key, newValue ->
+                            fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${key}"] = newValue
                         }
+                    )
+                    
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 1.dp)
+
+                    // Double counter categories
+                    FUERA_ESPEC_CATS.forEach { cat ->
+                        FueraEspecificacionDeepCategorySection(
+                            category = cat,
+                            isDouble = true,
+                            counters = fueraEspecificacionCounters,
+                            onValueChange = { key, newValue ->
+                                fueraEspecificacionCounters["${cat}_${key}"] = newValue
+                            }
+                        )
                     }
                 }
             }
@@ -488,61 +503,113 @@ fun CounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
 }
 
 @Composable
-fun FueraEspecificacionCategoryNode(
+fun FueraEspecificacionDeepCategorySection(
     category: String,
-    currentTolerable: Int,
-    currentNoTolerable: Int,
+    isDouble: Boolean,
+    counters: Map<String, Int>,
     onValueChange: (String, Int) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(
-            text = category,
-            style = MaterialTheme.typography.titleMedium,
-            fontWeight = FontWeight.Bold,
-            color = MaterialTheme.colorScheme.secondary
-        )
-        Spacer(modifier = Modifier.height(4.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(16.dp)
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                Text("Tolerable", style = MaterialTheme.typography.labelMedium)
-                MiniCounterRow(value = currentTolerable) { onValueChange("Tolerable", it) }
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (expanded) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f) 
+                             else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = category,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.secondary
+                )
+                TextButton(onClick = { expanded = !expanded }) {
+                    Text(if (expanded) "Cerrar" else "Abrir", fontWeight = FontWeight.SemiBold)
+                }
             }
-            Column(modifier = Modifier.weight(1f)) {
-                Text("No Tolerable", style = MaterialTheme.typography.labelMedium)
-                MiniCounterRow(value = currentNoTolerable) { onValueChange("No Tolerable", it) }
+
+            if (expanded) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Column {
+                    CALIBRES.forEachIndexed { index, calibre ->
+                        val baseKey = "${category}_${calibre}"
+                        FueraEspecificacionCalibreRow(
+                            label = calibre,
+                            isDouble = isDouble,
+                            val1 = if (isDouble) (counters["${baseKey}_Tolerable"] ?: 0) else (counters[baseKey] ?: 0),
+                            val2 = if (isDouble) (counters["${baseKey}_No Tolerable"] ?: 0) else 0,
+                            onVal1Change = { if (isDouble) onValueChange("${calibre}_Tolerable", it) else onValueChange(calibre, it) },
+                            onVal2Change = { if (isDouble) onValueChange("${calibre}_No Tolerable", it) }
+                        )
+                        if (index < CALIBRES.size - 1) {
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
+                        }
+                    }
+                }
             }
         }
     }
 }
 
 @Composable
-fun MiniCounterRow(value: Int, onValueChange: (Int) -> Unit) {
-    Row(
-        verticalAlignment = Alignment.CenterVertically,
-        horizontalArrangement = Arrangement.Start
-    ) {
-        FilledTonalIconButton(
-            onClick = { if (value > 0) onValueChange(value - 1) },
-            modifier = Modifier.size(32.dp)
+fun FueraEspecificacionCalibreRow(
+    label: String,
+    isDouble: Boolean,
+    val1: Int,
+    val2: Int,
+    onVal1Change: (Int) -> Unit,
+    onVal2Change: (Int) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(text = label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(12.dp)
         ) {
-            Text("-", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+            Column(modifier = Modifier.weight(1f)) {
+                if (isDouble) Text("Tolerable", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                MiniCounter(value = val1, onSelection = onVal1Change)
+            }
+            if (isDouble) {
+                Column(modifier = Modifier.weight(1f)) {
+                    Text("No Tolerable", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
+                    MiniCounter(value = val2, onSelection = onVal2Change)
+                }
+            }
         }
-        
+    }
+}
+
+@Composable
+fun MiniCounter(value: Int, onSelection: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically) {
+        FilledTonalIconButton(
+            onClick = { if (value > 0) onSelection(value - 1) },
+            modifier = Modifier.size(28.dp)
+        ) {
+            Text("-", fontWeight = FontWeight.Bold)
+        }
         Text(
             text = value.toString(),
-            modifier = Modifier.padding(horizontal = 12.dp),
-            style = MaterialTheme.typography.titleMedium,
+            modifier = Modifier.padding(horizontal = 8.dp),
+            style = MaterialTheme.typography.bodyMedium,
             fontWeight = FontWeight.Bold
         )
-        
         FilledTonalIconButton(
-            onClick = { onValueChange(value + 1) },
-            modifier = Modifier.size(32.dp)
+            onClick = { onSelection(value + 1) },
+            modifier = Modifier.size(28.dp)
         ) {
-            Icon(Icons.Default.Add, contentDescription = "Más", modifier = Modifier.size(16.dp))
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
         }
     }
 }
