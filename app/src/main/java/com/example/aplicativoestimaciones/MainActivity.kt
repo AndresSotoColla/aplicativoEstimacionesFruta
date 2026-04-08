@@ -34,6 +34,8 @@ import java.util.Locale
 
 val CALIBRES = listOf("C5", "C6", "C7", "C8", "C9", "C10", "C8P", "Guapita", "Baby Guapa")
 val DEFECTOS = listOf("Enferma", "Quema Sol Severo", "Deforme", "Daño Insecto", "Daño Mecánico")
+val FUERA_ESPEC_CATS = listOf("Cuello", "Cónica", "Cicatriz", "Base café", "Cónica Inclinada", "Corona Pequeña", "Corona Grande", "Corona Múltiple", "Cochinilla", "Off Color", "Quema Sol Leve")
+val ESPEC_TYPES = listOf("Tolerable", "No Tolerable")
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -148,6 +150,20 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
             DEFECTOS.forEach { defect ->
                 CALIBRES.forEach { calibre ->
                     nonRecoveredByCalibre["${defect}_${calibre}"] = 0
+                }
+            }
+        }
+    }
+    
+    // Counters for Fuera Especificación
+    val fueraEspecificacionCounters = remember { mutableStateMapOf<String, Int>() }
+    var deformeFuera by remember { mutableIntStateOf(0) }
+    
+    LaunchedEffect(Unit) {
+        if (fueraEspecificacionCounters.isEmpty()) {
+            FUERA_ESPEC_CATS.forEach { cat ->
+                ESPEC_TYPES.forEach { type ->
+                    fueraEspecificacionCounters["${cat}_${type}"] = 0
                 }
             }
         }
@@ -380,6 +396,37 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                 }
             }
             
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text("Fruta Fuera Especificación", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    CounterRow("Deforme", deformeFuera) { deformeFuera = it }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 1.dp)
+                    
+                    FUERA_ESPEC_CATS.forEachIndexed { index, cat ->
+                        FueraEspecificacionCategoryNode(
+                            category = cat,
+                            onValueChange = { type, newValue ->
+                                fueraEspecificacionCounters["${cat}_${type}"] = newValue
+                            },
+                            currentTolerable = fueraEspecificacionCounters["${cat}_Tolerable"] ?: 0,
+                            currentNoTolerable = fueraEspecificacionCounters["${cat}_No Tolerable"] ?: 0
+                        )
+                        if (index < FUERA_ESPEC_CATS.size - 1) {
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 0.5.dp)
+                        }
+                    }
+                }
+            }
+
             Spacer(modifier = Modifier.height(32.dp))
             Button(
                 onClick = onBack,
@@ -436,6 +483,66 @@ fun CounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
             FilledTonalIconButton(onClick = { onValueChange(value + 1) }) {
                 Icon(Icons.Default.Add, contentDescription = "Más")
             }
+        }
+    }
+}
+
+@Composable
+fun FueraEspecificacionCategoryNode(
+    category: String,
+    currentTolerable: Int,
+    currentNoTolerable: Int,
+    onValueChange: (String, Int) -> Unit
+) {
+    Column(modifier = Modifier.fillMaxWidth()) {
+        Text(
+            text = category,
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.secondary
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Row(
+            modifier = Modifier.fillMaxWidth(),
+            horizontalArrangement = Arrangement.spacedBy(16.dp)
+        ) {
+            Column(modifier = Modifier.weight(1f)) {
+                Text("Tolerable", style = MaterialTheme.typography.labelMedium)
+                MiniCounterRow(value = currentTolerable) { onValueChange("Tolerable", it) }
+            }
+            Column(modifier = Modifier.weight(1f)) {
+                Text("No Tolerable", style = MaterialTheme.typography.labelMedium)
+                MiniCounterRow(value = currentNoTolerable) { onValueChange("No Tolerable", it) }
+            }
+        }
+    }
+}
+
+@Composable
+fun MiniCounterRow(value: Int, onValueChange: (Int) -> Unit) {
+    Row(
+        verticalAlignment = Alignment.CenterVertically,
+        horizontalArrangement = Arrangement.Start
+    ) {
+        FilledTonalIconButton(
+            onClick = { if (value > 0) onValueChange(value - 1) },
+            modifier = Modifier.size(32.dp)
+        ) {
+            Text("-", fontSize = 18.sp, fontWeight = FontWeight.Bold)
+        }
+        
+        Text(
+            text = value.toString(),
+            modifier = Modifier.padding(horizontal = 12.dp),
+            style = MaterialTheme.typography.titleMedium,
+            fontWeight = FontWeight.Bold
+        )
+        
+        FilledTonalIconButton(
+            onClick = { onValueChange(value + 1) },
+            modifier = Modifier.size(32.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = "Más", modifier = Modifier.size(16.dp))
         }
     }
 }
