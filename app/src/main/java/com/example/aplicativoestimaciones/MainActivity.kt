@@ -570,20 +570,22 @@ fun FueraEspecificacionCalibreRow(
     onVal1Change: (Int) -> Unit,
     onVal2Change: (Int) -> Unit
 ) {
-    Column(modifier = Modifier.fillMaxWidth()) {
-        Text(text = label, style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.Bold)
+    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
+        Text(text = label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Spacer(modifier = Modifier.height(4.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(12.dp)
+            horizontalArrangement = Arrangement.spacedBy(8.dp),
+            verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                if (isDouble) Text("Tolerable", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                MiniCounter(value = val1, onSelection = onVal1Change)
+                if (isDouble) Text("Tolerable", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                PrettyCounter(value = val1, onValueChange = onVal1Change)
             }
             if (isDouble) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("No Tolerable", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    MiniCounter(value = val2, onSelection = onVal2Change)
+                    Text("No Tolerable", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    PrettyCounter(value = val2, onValueChange = onVal2Change)
                 }
             }
         }
@@ -591,25 +593,42 @@ fun FueraEspecificacionCalibreRow(
 }
 
 @Composable
-fun MiniCounter(value: Int, onSelection: (Int) -> Unit) {
+fun PrettyCounter(value: Int, onValueChange: (Int) -> Unit) {
+    var textValue by remember(value) { mutableStateOf(value.toString()) }
+
     Row(verticalAlignment = Alignment.CenterVertically) {
         FilledTonalIconButton(
-            onClick = { if (value > 0) onSelection(value - 1) },
-            modifier = Modifier.size(28.dp)
+            onClick = { if (value > 0) onValueChange(value - 1) },
+            modifier = Modifier.size(36.dp)
         ) {
-            Text("-", fontWeight = FontWeight.Bold)
+            Text("-", fontSize = 20.sp, fontWeight = FontWeight.Bold)
         }
-        Text(
-            text = value.toString(),
-            modifier = Modifier.padding(horizontal = 8.dp),
-            style = MaterialTheme.typography.bodyMedium,
-            fontWeight = FontWeight.Bold
+
+        OutlinedTextField(
+            value = textValue,
+            onValueChange = {
+                textValue = it
+                val intValue = it.toIntOrNull()
+                if (intValue != null && intValue >= 0) {
+                    onValueChange(intValue)
+                } else if (it.isEmpty()) {
+                    onValueChange(0)
+                }
+            },
+            keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            modifier = Modifier
+                .width(75.dp)
+                .padding(horizontal = 4.dp),
+            singleLine = true,
+            textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 16.sp),
+            shape = RoundedCornerShape(8.dp)
         )
+
         FilledTonalIconButton(
-            onClick = { onSelection(value + 1) },
-            modifier = Modifier.size(28.dp)
+            onClick = { onValueChange(value + 1) },
+            modifier = Modifier.size(36.dp)
         ) {
-            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(14.dp))
+            Icon(Icons.Default.Add, contentDescription = null, modifier = Modifier.size(18.dp))
         }
     }
 }
