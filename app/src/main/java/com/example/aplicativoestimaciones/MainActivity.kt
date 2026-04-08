@@ -32,6 +32,9 @@ import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.Locale
 
+val CALIBRES = listOf("C5", "C6", "C7", "C8", "C9", "C10", "C8P", "Guapita", "Baby Guapa")
+val DEFECTOS = listOf("Enferma", "Quema Sol Severo", "Deforme", "Daño Insecto", "Daño Mecánico")
+
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
@@ -136,6 +139,19 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     var bajoPeso by remember { mutableIntStateOf(0) }
     var muestreo by remember { mutableIntStateOf(0) }
     var frutaJoven by remember { mutableIntStateOf(0) }
+
+    // Multi-level counters for Non-Recovered by Calibre
+    val nonRecoveredByCalibre = remember { mutableStateMapOf<String, Int>() }
+    // Initialize map if empty (recommended for stability)
+    LaunchedEffect(Unit) {
+        if (nonRecoveredByCalibre.isEmpty()) {
+            DEFECTOS.forEach { defect ->
+                CALIBRES.forEach { calibre ->
+                    nonRecoveredByCalibre["${defect}_${calibre}"] = 0
+                }
+            }
+        }
+    }
 
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
@@ -339,6 +355,28 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                     CounterRow("Fruta Joven", frutaJoven) { frutaJoven = it }
                 }
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text("Fruta No Recuperada Calibre", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(12.dp))
+                    
+                    DEFECTOS.forEach { defecto ->
+                        DefectCategorySection(
+                            category = defecto,
+                            calibreValues = nonRecoveredByCalibre,
+                            onValueChange = { key, newValue ->
+                                nonRecoveredByCalibre[key] = newValue
+                            }
+                        )
+                    }
+                }
             }
             
             Spacer(modifier = Modifier.height(32.dp))
@@ -396,6 +434,62 @@ fun CounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
             
             FilledTonalIconButton(onClick = { onValueChange(value + 1) }) {
                 Icon(Icons.Default.Add, contentDescription = "Más")
+            }
+        }
+    }
+}
+
+@Composable
+fun DefectCategorySection(
+    category: String,
+    calibreValues: Map<String, Int>,
+    onValueChange: (String, Int) -> Unit
+) {
+    var expanded by remember { mutableStateOf(false) }
+
+    Card(
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp),
+        colors = CardDefaults.cardColors(
+            containerColor = if (expanded) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) 
+                             else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+        ),
+        shape = RoundedCornerShape(12.dp)
+    ) {
+        Column(modifier = Modifier.padding(12.dp)) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically,
+                horizontalArrangement = Arrangement.SpaceBetween
+            ) {
+                Text(
+                    text = category,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.Bold,
+                    color = MaterialTheme.colorScheme.primary
+                )
+                TextButton(onClick = { expanded = !expanded }) {
+                    Text(if (expanded) "Cerrar" else "Abrir", fontWeight = FontWeight.SemiBold)
+                }
+            }
+
+            if (expanded) {
+                Spacer(modifier = Modifier.height(8.dp))
+                Column {
+                    CALIBRES.forEachIndexed { index, calibre ->
+                        val key = "${category}_${calibre}"
+                        val value = calibreValues[key] ?: 0
+                        CounterRow(
+                            label = calibre,
+                            value = value,
+                            onValueChange = { newValue -> onValueChange(key, newValue) }
+                        )
+                        if (index < CALIBRES.size - 1) {
+                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
+                        }
+                    }
+                }
             }
         }
     }
