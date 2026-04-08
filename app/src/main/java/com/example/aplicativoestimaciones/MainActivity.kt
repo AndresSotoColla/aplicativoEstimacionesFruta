@@ -53,6 +53,8 @@ import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.activity.compose.BackHandler
 import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -101,16 +103,6 @@ data class BloqueData(
     val grupoForza: String
 )
 
-@Composable
-fun blackTextFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedTextColor = Color.Black,
-    unfocusedTextColor = Color.Black,
-    focusedBorderColor = PrimaryEarth,
-    unfocusedBorderColor = PrimaryEarth.copy(alpha = 0.5f),
-    focusedLabelColor = PrimaryEarth,
-    unfocusedLabelColor = PrimaryEarth,
-    cursorColor = PrimaryEarth
-)
 
 data class EstimationRecord(
     val id: String,
