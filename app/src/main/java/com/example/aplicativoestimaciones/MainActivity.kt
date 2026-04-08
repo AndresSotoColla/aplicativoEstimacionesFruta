@@ -355,6 +355,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                     CounterRow("Fruta Joven", frutaJoven) { frutaJoven = it }
                 }
+            }
             Spacer(modifier = Modifier.height(24.dp))
 
             Card(
