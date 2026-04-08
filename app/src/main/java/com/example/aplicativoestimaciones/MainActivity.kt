@@ -1,5 +1,10 @@
 package com.example.aplicativoestimaciones
 
+import android.os.Bundle
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
+import androidx.compose.foundation.background
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
@@ -52,9 +57,6 @@ import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aplicativoestimaciones.ui.theme.AplicativoEstimacionesTheme
-import java.text.SimpleDateFormat
-import java.util.Date
-import java.util.Locale
 
 val CALIBRES = listOf("C5", "C6", "C7", "C8", "C9", "C10", "C8P", "Guapita", "Baby Guapa")
 val DEFECTOS = listOf("Enferma", "Quema Sol Severo", "Deforme", "Daño Insecto", "Daño Mecánico")
