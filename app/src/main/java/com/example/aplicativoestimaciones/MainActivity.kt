@@ -128,6 +128,14 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     var c8p by remember { mutableIntStateOf(0) }
     var guapita by remember { mutableIntStateOf(0) }
     var babyGuapa by remember { mutableIntStateOf(0) }
+    
+    // Non-recovered fruit counters
+    var ausente by remember { mutableIntStateOf(0) }
+    var dano by remember { mutableIntStateOf(0) }
+    var sinInducir by remember { mutableIntStateOf(0) }
+    var bajoPeso by remember { mutableIntStateOf(0) }
+    var muestreo by remember { mutableIntStateOf(0) }
+    var frutaJoven by remember { mutableIntStateOf(0) }
 
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
@@ -304,6 +312,32 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     CounterRow("Guapita", guapita) { guapita = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                     CounterRow("Baby Guapa", babyGuapa) { babyGuapa = it }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(24.dp))
+
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(16.dp)
+            ) {
+                Column(modifier = Modifier.padding(20.dp)) {
+                    Text("Fruta No Recuperada", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    CounterRow("Ausente", ausente) { ausente = it }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    CounterRow("Daño", dano) { dano = it }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    CounterRow("Sin Inducir", sinInducir) { sinInducir = it }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    CounterRow("Bajo Peso", bajoPeso) { bajoPeso = it }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    CounterRow("Muestreo", muestreo) { muestreo = it }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    CounterRow("Fruta Joven", frutaJoven) { frutaJoven = it }
                 }
             }
             
