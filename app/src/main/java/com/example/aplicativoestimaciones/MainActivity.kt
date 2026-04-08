@@ -103,6 +103,17 @@ data class BloqueData(
     val grupoForza: String
 )
 
+@Composable
+fun blackTextFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedTextColor = Color.Black,
+    unfocusedTextColor = Color.Black,
+    focusedBorderColor = PrimaryEarth,
+    unfocusedBorderColor = PrimaryEarth.copy(alpha = 0.5f),
+    focusedLabelColor = PrimaryEarth,
+    unfocusedLabelColor = PrimaryEarth,
+    cursorColor = PrimaryEarth
+)
+
 
 data class EstimationRecord(
     val id: String,
@@ -229,8 +240,8 @@ fun jsonToMap(json: JSONObject?): Map<String, Int> {
 }
 
 // Custom saver for SnapshotStateMap to survive rotation
-val MapSaver = Saver<SnapshotStateMap<String, Int>, Map<String, Int>>(
-    save = { it.toMap() },
+val MapSaver = Saver<SnapshotStateMap<String, Int>, HashMap<String, Int>>(
+    save = { HashMap(it) }, 
     restore = { it?.let { data -> mutableStateMapOf<String, Int>().apply { putAll(data) } } }
 )
 
