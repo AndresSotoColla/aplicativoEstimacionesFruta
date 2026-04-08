@@ -278,13 +278,75 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
         return
     }
 
-    val csvHeader = "ID,Fecha,Semana,Grupo Forza,Bloque,Calidad Total,No Recuperada Total,No Rec Calibre Total,Fuera Espec Total\n"
-    val csvContent = StringBuilder(csvHeader)
+    val sb = StringBuilder()
+    
+    // --- BUILD HEADER ---
+    sb.append("ID,Fecha,Semana,Grupo Forza,Bloque,Calidad Total,No Recuperada Total,No Rec Calibre Total,Fuera Espec Total")
+    
+    // Calidad breakdown
+    CALIBRES.forEach { sb.append(",Calidad_$it") }
+    
+    // No Recuperada (Simple) breakdown
+    val noRecCats = listOf("Ausente", "Daño", "Sin Inducir", "Bajo Peso", "Muestreo", "Fruta Joven")
+    noRecCats.forEach { sb.append(",NoRec_$it") }
+    
+    // No Recuperada Calibre matrix
+    DEFECTOS.forEach { defecto ->
+        CALIBRES.forEach { calibre ->
+            sb.append(",NRC_${defecto}_$calibre")
+        }
+    }
+    
+    // Fuera Especificación matrix
+    // Single category: Deforme
+    CALIBRES.forEach { calibre ->
+        sb.append(",FE_${FUERA_ESPEC_SINGLE}_$calibre")
+    }
+    // Dual categories
+    FUERA_ESPEC_CATS.forEach { cat ->
+        CALIBRES.forEach { calibre ->
+            ESPEC_TYPES.forEach { type ->
+                sb.append(",FE_${cat}_${calibre}_$type")
+            }
+        }
+    }
+    sb.append("\n")
+
+    // --- BUILD ROWS ---
     records.forEach { r ->
-        csvContent.append("${r.id},${r.date},${r.week},${r.grupoForza},${r.bloque},${r.calidadTotal},${r.noRecuperadaTotal},${r.noRecuperadaCalibreTotal},${r.fueraEspecTotal}\n")
+        // Basic info & Totals
+        sb.append("${r.id},\"${r.date}\",\"${r.week}\",\"${r.grupoForza}\",\"${r.bloque}\",${r.calidadTotal},${r.noRecuperadaTotal},${r.noRecuperadaCalibreTotal},${r.fueraEspecTotal}")
+        
+        // Calidad counts
+        CALIBRES.forEach { sb.append(",${r.calidadCounts[it] ?: 0}") }
+        
+        // No Recuperada (Simple) counts
+        noRecCats.forEach { sb.append(",${r.noRecuperadaCounts[it] ?: 0}") }
+        
+        // No Recuperada Calibre counts
+        DEFECTOS.forEach { defecto ->
+            CALIBRES.forEach { calibre ->
+                sb.append(",${r.noRecCalibreCounts["${defecto}_$calibre"] ?: 0}")
+            }
+        }
+        
+        // Fuera Especificación counts
+        // Deforme
+        CALIBRES.forEach { calibre ->
+            sb.append(",${r.fueraEspecCounts["${FUERA_ESPEC_SINGLE}_$calibre"] ?: 0}")
+        }
+        // Dual categories
+        FUERA_ESPEC_CATS.forEach { cat ->
+            CALIBRES.forEach { calibre ->
+                ESPEC_TYPES.forEach { type ->
+                    sb.append(",${r.fueraEspecCounts["${cat}_${calibre}_$type"] ?: 0}")
+                }
+            }
+        }
+        sb.append("\n")
     }
 
-    val filename = "estimaciones_fruta_${System.currentTimeMillis()}.csv"
+    val filename = "estimaciones_completo_${System.currentTimeMillis()}.csv"
     val contentValues = ContentValues().apply {
         put(MediaStore.MediaColumns.DISPLAY_NAME, filename)
         put(MediaStore.MediaColumns.MIME_TYPE, "text/csv")
@@ -297,9 +359,9 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
     try {
         uri?.let {
             resolver.openOutputStream(it)?.use { outputStream ->
-                outputStream.write(csvContent.toString().toByteArray(StandardCharsets.UTF_8))
+                outputStream.write(sb.toString().toByteArray(StandardCharsets.UTF_8))
             }
-            Toast.makeText(context, "Archivo guardado en Descargas", Toast.LENGTH_LONG).show()
+            Toast.makeText(context, "Excel completo guardado en Descargas", Toast.LENGTH_LONG).show()
         } ?: run {
             Toast.makeText(context, "Error al crear el archivo", Toast.LENGTH_SHORT).show()
         }
