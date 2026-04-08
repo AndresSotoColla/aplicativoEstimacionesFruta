@@ -105,7 +105,12 @@ data class EstimationRecord(
     val calidadTotal: Int,
     val noRecuperadaTotal: Int,
     val noRecuperadaCalibreTotal: Int,
-    val fueraEspecTotal: Int
+    val fueraEspecTotal: Int,
+    // Add detailed maps for "todos los conteos"
+    val calidadCounts: Map<String, Int> = emptyMap(),
+    val noRecuperadaCounts: Map<String, Int> = emptyMap(),
+    val noRecCalibreCounts: Map<String, Int> = emptyMap(),
+    val fueraEspecCounts: Map<String, Int> = emptyMap()
 )
 
 fun saveEstimation(context: Context, record: EstimationRecord) {
@@ -125,6 +130,11 @@ fun saveEstimation(context: Context, record: EstimationRecord) {
             put("noRecTotal", r.noRecuperadaTotal)
             put("noRecCalTotal", r.noRecuperadaCalibreTotal)
             put("fueraEspec", r.fueraEspecTotal)
+            // Serialize maps
+            put("calidadCounts", JSONObject(r.calidadCounts))
+            put("noRecCounts", JSONObject(r.noRecuperadaCounts))
+            put("noRecCalCounts", JSONObject(r.noRecCalibreCounts))
+            put("fueraEspecCounts", JSONObject(r.fueraEspecCounts))
         }
         jsonArray.put(obj)
     }
@@ -150,14 +160,29 @@ fun getHistorial(context: Context): List<EstimationRecord> {
                 week = obj.getString("week"),
                 grupoForza = obj.getString("grupoForza"),
                 bloque = obj.getString("bloque"),
-                calidadTotal = obj.getInt("calidad"),
-                noRecuperadaTotal = obj.getInt("noRecTotal"),
-                noRecuperadaCalibreTotal = obj.getInt("noRecCalTotal"),
-                fueraEspecTotal = obj.getInt("fueraEspec")
+                calidadTotal = obj.optInt("calidad", 0),
+                noRecuperadaTotal = obj.optInt("noRecTotal", 0),
+                noRecuperadaCalibreTotal = obj.optInt("noRecCalTotal", 0),
+                fueraEspecTotal = obj.optInt("fueraEspec", 0),
+                calidadCounts = jsonToMap(obj.optJSONObject("calidadCounts")),
+                noRecuperadaCounts = jsonToMap(obj.optJSONObject("noRecCounts")),
+                noRecCalibreCounts = jsonToMap(obj.optJSONObject("noRecCalCounts")),
+                fueraEspecCounts = jsonToMap(obj.optJSONObject("fueraEspecCounts"))
             ))
         }
     } catch (e: Exception) { e.printStackTrace() }
     return list
+}
+
+fun jsonToMap(json: JSONObject?): Map<String, Int> {
+    if (json == null) return emptyMap()
+    val map = mutableMapOf<String, Int>()
+    val keys = json.keys()
+    while (keys.hasNext()) {
+        val key = keys.next()
+        map[key] = json.getInt(key)
+    }
+    return map
 }
 
 fun readCsvData(context: Context): List<BloqueData> {
@@ -489,7 +514,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text("Total General", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                        Text("$totalGeneral", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
+                        Text("$totalGeneral", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = Color.White)
                     }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
@@ -745,7 +770,32 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
 
             Spacer(modifier = Modifier.height(32.dp))
             Button(
-                onClick = onBack,
+                onClick = {
+                    val r = EstimationRecord(
+                        id = System.currentTimeMillis().toString(),
+                        date = currentTime,
+                        week = semana,
+                        grupoForza = grupoForza,
+                        bloque = bloque,
+                        calidadTotal = calidadTotal,
+                        noRecuperadaTotal = noRecTotal,
+                        noRecuperadaCalibreTotal = noRecCalTotal,
+                        fueraEspecTotal = fueraEspecTotal,
+                        calidadCounts = mapOf(
+                            "C5" to c5, "C6" to c6, "C7" to c7, "C8" to c8, "C9" to c9,
+                            "C10" to c10, "C8P" to c8p, "Guapita" to guapita, "Baby Guapa" to babyGuapa
+                        ),
+                        noRecuperadaCounts = mapOf(
+                            "Ausente" to ausente, "Daño" to dano, "Sin Inducir" to sinInducir,
+                            "Bajo Peso" to bajoPeso, "Muestreo" to muestreo, "Fruta Joven" to frutaJoven
+                        ),
+                        noRecCalibreCounts = nonRecoveredByCalibre.toMap(),
+                        fueraEspecCounts = fueraEspecificacionCounters.toMap()
+                    )
+                    saveEstimation(context, r)
+                    Toast.makeText(context, "Datos guardados correctamente", Toast.LENGTH_SHORT).show()
+                    onBack()
+                },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
                 colors = ButtonDefaults.buttonColors(containerColor = PrimaryEarth, contentColor = Color.White)
