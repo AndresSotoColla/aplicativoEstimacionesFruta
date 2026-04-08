@@ -17,11 +17,16 @@ import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.focus.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
+import org.json.JSONArray
+import org.json.JSONObject
+import java.io.*
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
@@ -29,6 +34,7 @@ import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Refresh
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.List
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -56,6 +62,70 @@ data class BloqueData(
     val bloque: String,
     val grupoForza: String
 )
+
+data class EstimationRecord(
+    val id: String,
+    val date: String,
+    val week: String,
+    val grupoForza: String,
+    val bloque: String,
+    val calidadTotal: Int,
+    val noRecuperadaTotal: Int,
+    val noRecuperadaCalibreTotal: Int,
+    val fueraEspecTotal: Int
+)
+
+fun saveEstimation(context: Context, record: EstimationRecord) {
+    val file = File(context.filesDir, "historial.json")
+    val list = getHistorial(context).toMutableList()
+    list.add(0, record) // Newest first
+    
+    val jsonArray = JSONArray()
+    list.forEach { r ->
+        val obj = JSONObject().apply {
+            put("id", r.id)
+            put("date", r.date)
+            put("week", r.week)
+            put("grupoForza", r.grupoForza)
+            put("bloque", r.bloque)
+            put("calidad", r.calidadTotal)
+            put("noRecTotal", r.noRecuperadaTotal)
+            put("noRecCalTotal", r.noRecuperadaCalibreTotal)
+            put("fueraEspec", r.fueraEspecTotal)
+        }
+        jsonArray.put(obj)
+    }
+    
+    try {
+        FileOutputStream(file).use { it.write(jsonArray.toString().toByteArray()) }
+    } catch (e: Exception) { e.printStackTrace() }
+}
+
+fun getHistorial(context: Context): List<EstimationRecord> {
+    val file = File(context.filesDir, "historial.json")
+    if (!file.exists()) return emptyList()
+    
+    val list = mutableListOf<EstimationRecord>()
+    try {
+        val content = file.readText()
+        val jsonArray = JSONArray(content)
+        for (i in 0 until jsonArray.length()) {
+            val obj = jsonArray.getJSONObject(i)
+            list.add(EstimationRecord(
+                id = obj.getString("id"),
+                date = obj.getString("date"),
+                week = obj.getString("week"),
+                grupoForza = obj.getString("grupoForza"),
+                bloque = obj.getString("bloque"),
+                calidadTotal = obj.getInt("calidad"),
+                noRecuperadaTotal = obj.getInt("noRecTotal"),
+                noRecuperadaCalibreTotal = obj.getInt("noRecCalTotal"),
+                fueraEspecTotal = obj.getInt("fueraEspec")
+            ))
+        }
+    } catch (e: Exception) { e.printStackTrace() }
+    return list
+}
 
 fun readCsvData(context: Context): List<BloqueData> {
     val list = mutableListOf<BloqueData>()
@@ -122,7 +192,7 @@ class MainActivity : ComponentActivity() {
 }
 
 enum class Screen {
-    Home, IngresarDatos
+    Home, IngresarDatos, Historial
 }
 
 @Composable
@@ -130,13 +200,17 @@ fun MainApp() {
     var currentScreen by remember { mutableStateOf(Screen.Home) }
 
     when (currentScreen) {
-        Screen.Home -> HomeScreen(onNavigateToIngresar = { currentScreen = Screen.IngresarDatos })
+        Screen.Home -> HomeScreen(
+            onNavigateToIngresar = { currentScreen = Screen.IngresarDatos },
+            onNavigateToHistorial = { currentScreen = Screen.Historial }
+        )
         Screen.IngresarDatos ->  IngresarDatosScreen(onBack = { currentScreen = Screen.Home })
+        Screen.Historial -> HistorialScreen(onBack = { currentScreen = Screen.Home })
     }
 }
 
 @Composable
-fun HomeScreen(onNavigateToIngresar: () -> Unit) {
+fun HomeScreen(onNavigateToIngresar: () -> Unit, onNavigateToHistorial: () -> Unit) {
     val context = LocalContext.current
     
     // File picker launcher
@@ -181,6 +255,7 @@ fun HomeScreen(onNavigateToIngresar: () -> Unit) {
             
             HomeButton("Ingresar Datos", Icons.Default.Edit) { onNavigateToIngresar() }
             HomeButton("Subir Datos", Icons.Default.Share) { /* TODO */ }
+            HomeButton("Historico", Icons.Default.List) { onNavigateToHistorial() }
             HomeButton("Actualizar Bloques", Icons.Default.Refresh) { 
                 pickerLauncher.launch("text/*") 
             }
@@ -301,6 +376,13 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
             }
         }
     }
+
+    // --- REAL-TIME TOTALS CALCULATION ---
+    val calidadTotal by remember { derivedStateOf { c5 + c6 + c7 + c8 + c9 + c10 + c8p + guapita + babyGuapa } }
+    val noRecTotal by remember { derivedStateOf { ausente + dano + sinInducir + bajoPeso + muestreo + frutaJoven } }
+    val noRecCalTotal by remember { derivedStateOf { nonRecoveredByCalibre.values.sum() } }
+    val fueraEspecTotal by remember { derivedStateOf { fueraEspecificacionCounters.values.sum() } }
+    val totalGeneral by remember { derivedStateOf { calidadTotal + noRecTotal + noRecCalTotal + fueraEspecTotal } }
 
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
@@ -840,6 +922,96 @@ fun DefectCategorySection(
                 }
             }
         }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun HistorialScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
+    val records = remember { getHistorial(context) }
+    
+    // Group records by metadata for better UI organization
+    val groupedRecords = records.groupBy { "${it.grupoForza} - ${it.bloque}" }
+
+    Scaffold(
+        topBar = {
+            TopAppBar(
+                title = { Text("Historial de Estimaciones", fontWeight = FontWeight.Bold) },
+                navigationIcon = {
+                    IconButton(onClick = onBack) {
+                        Icon(Icons.Default.ArrowBack, contentDescription = "Regresar")
+                    }
+                },
+                colors = TopAppBarDefaults.topAppBarColors(
+                    containerColor = MaterialTheme.colorScheme.primaryContainer,
+                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+            )
+        }
+    ) { padding ->
+        if (records.isEmpty()) {
+            Box(Modifier.fillMaxSize().padding(padding), contentAlignment = Alignment.Center) {
+                Column(horizontalAlignment = Alignment.CenterHorizontally) {
+                    Icon(Icons.Default.List, contentDescription = null, modifier = Modifier.size(64.dp), tint = Color.Gray.copy(alpha = 0.5f))
+                    Spacer(Modifier.height(16.dp))
+                    Text("No hay registros guardados", color = Color.Gray)
+                }
+            }
+        } else {
+            LazyColumn(
+                modifier = Modifier.fillMaxSize().padding(padding).padding(horizontal = 16.dp),
+                verticalArrangement = Arrangement.spacedBy(16.dp),
+                contentPadding = PaddingValues(vertical = 16.dp)
+            ) {
+                groupedRecords.forEach { (groupKey, groupRecords) ->
+                    item {
+                        Surface(
+                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            shape = RoundedCornerShape(8.dp),
+                            modifier = Modifier.padding(top = 8.dp)
+                        ) {
+                            Text(
+                                text = groupKey,
+                                style = MaterialTheme.typography.labelLarge,
+                                fontWeight = FontWeight.ExtraBold,
+                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
+                            )
+                        }
+                    }
+                    items(groupRecords) { record ->
+                        Card(
+                            modifier = Modifier.fillMaxWidth(),
+                            elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
+                            shape = RoundedCornerShape(16.dp),
+                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                        ) {
+                            Column(Modifier.padding(16.dp)) {
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                                    Text(record.date, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
+                                    Text("Semana ${record.week}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                }
+                                Spacer(Modifier.height(12.dp))
+                                Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+                                    SummaryMiniItem("Calidad", record.calidadTotal)
+                                    SummaryMiniItem("No Rec.", record.noRecuperadaTotal)
+                                    SummaryMiniItem("F. Espec", record.fueraEspecTotal)
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
+@Composable
+fun SummaryMiniItem(label: String, value: Int) {
+    Column(horizontalAlignment = Alignment.CenterHorizontally) {
+        Text(value.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Text(label, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
     }
 }
 
