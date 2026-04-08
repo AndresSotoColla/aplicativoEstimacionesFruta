@@ -62,33 +62,6 @@ val FUERA_ESPEC_CATS = listOf("Cuello", "Cónica", "Cicatriz", "Base café", "C�
 val FUERA_ESPEC_SINGLE = "Deforme"
 val ESPEC_TYPES = listOf("Tolerable", "No Tolerable")
 
-val PrimaryEarth = Color(0xFF7D725C)
-val SecondaryGold = Color(0xFFBAAA89)
-val SoftCream = Color(0xFFFBF9F5)
-val DarkText = Color(0xFF2D2A26)
-
-@Composable
-fun ElegantTheme(content: @Composable () -> Unit) {
-    val colorScheme = lightColorScheme(
-        primary = PrimaryEarth,
-        onPrimary = Color.White,
-        primaryContainer = SecondaryGold,
-        onPrimaryContainer = PrimaryEarth,
-        secondary = SecondaryGold,
-        onSecondary = Color.White,
-        background = SoftCream,
-        surface = Color.White,
-        onSurface = DarkText,
-        outline = PrimaryEarth.copy(alpha = 0.5f)
-    )
-    
-    MaterialTheme(
-        colorScheme = colorScheme,
-        typography = Typography(),
-        content = content
-    )
-}
-
 data class BloqueData(
     val bloque: String,
     val grupoForza: String
@@ -252,7 +225,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            ElegantTheme {
+            AplicativoEstimacionesTheme {
                 MainApp()
             }
         }
@@ -339,16 +312,16 @@ fun HomeButton(text: String, icon: ImageVector, onClick: () -> Unit) {
         modifier = Modifier
             .fillMaxWidth()
             .height(72.dp),
-        shape = androidx.compose.foundation.shape.CircleShape, // Pill shaped
+        shape = RoundedCornerShape(20.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primary,
-            contentColor = Color.White
+            containerColor = MaterialTheme.colorScheme.primaryContainer,
+            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
         ),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 8.dp)
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
     ) {
         Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(28.dp))
         Spacer(modifier = Modifier.width(16.dp))
-        Text(text, fontSize = 20.sp, fontWeight = FontWeight.Bold)
+        Text(text, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
     }
 }
 
@@ -501,27 +474,27 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                elevation = CardDefaults.cardElevation(defaultElevation = 12.dp),
-                shape = RoundedCornerShape(24.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                shape = RoundedCornerShape(20.dp)
             ) {
-                Column(modifier = Modifier.padding(24.dp)) {
+                Column(modifier = Modifier.padding(16.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Total General", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                        Text("$totalGeneral", style = MaterialTheme.typography.headlineLarge, fontWeight = FontWeight.Black, color = MaterialTheme.colorScheme.primary)
+                        Text("Total General", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text("$totalGeneral", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                     }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 12.dp), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.3f))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBy(16.dp)) {
                         Column {
-                            SummaryLabel("Calidad", calidadTotal)
-                            SummaryLabel("No Rec.", noRecTotal)
+                            Text("Calidad: $calidadTotal", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
+                            Text("No Rec.: $noRecTotal", style = MaterialTheme.typography.bodyMedium)
                         }
                         Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f)) {
-                            SummaryLabel("No Rec. Cal", noRecCalTotal)
-                            SummaryLabel("F. Espec.", fueraEspecTotal)
+                            Text("No Rec. Cal: $noRecCalTotal", style = MaterialTheme.typography.bodyMedium)
+                            Text("F. Espec.: $fueraEspecTotal", style = MaterialTheme.typography.bodyMedium)
                         }
                     }
                 }
@@ -531,9 +504,9 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                colors = CardDefaults.cardColors(containerColor = Color.White),
-                shape = RoundedCornerShape(24.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(16.dp)
             ) {
                 Column(modifier = Modifier.padding(20.dp)) {
                     Text("Información General", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
@@ -661,23 +634,23 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     Text("Fruta Calidad", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    ElegantCounter("C5", c5) { c5 = it }
+                    CounterRow("C5", c5) { c5 = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    ElegantCounter("C6", c6) { c6 = it }
+                    CounterRow("C6", c6) { c6 = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    ElegantCounter("C7", c7) { c7 = it }
+                    CounterRow("C7", c7) { c7 = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    ElegantCounter("C8", c8) { c8 = it }
+                    CounterRow("C8", c8) { c8 = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    ElegantCounter("C9", c9) { c9 = it }
+                    CounterRow("C9", c9) { c9 = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    ElegantCounter("C10", c10) { c10 = it }
+                    CounterRow("C10", c10) { c10 = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    ElegantCounter("C8P", c8p) { c8p = it }
+                    CounterRow("C8P", c8p) { c8p = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    ElegantCounter("Guapita", guapita) { guapita = it }
+                    CounterRow("Guapita", guapita) { guapita = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    ElegantCounter("Baby Guapa", babyGuapa) { babyGuapa = it }
+                    CounterRow("Baby Guapa", babyGuapa) { babyGuapa = it }
                 }
             }
             
@@ -693,17 +666,17 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     Text("Fruta No Recuperada", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    ElegantCounter("Ausente", ausente) { ausente = it }
+                    CounterRow("Ausente", ausente) { ausente = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    ElegantCounter("Daño", dano) { dano = it }
+                    CounterRow("Daño", dano) { dano = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    ElegantCounter("Sin Inducir", sinInducir) { sinInducir = it }
+                    CounterRow("Sin Inducir", sinInducir) { sinInducir = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    ElegantCounter("Bajo Peso", bajoPeso) { bajoPeso = it }
+                    CounterRow("Bajo Peso", bajoPeso) { bajoPeso = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    ElegantCounter("Muestreo", muestreo) { muestreo = it }
+                    CounterRow("Muestreo", muestreo) { muestreo = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    ElegantCounter("Fruta Joven", frutaJoven) { frutaJoven = it }
+                    CounterRow("Fruta Joven", frutaJoven) { frutaJoven = it }
                 }
             }
             Spacer(modifier = Modifier.height(24.dp))
@@ -792,62 +765,47 @@ fun blackTextFieldColors() = OutlinedTextFieldDefaults.colors(
 )
 
 @Composable
-fun ElegantCounter(
-    label: String, 
-    value: Int, 
-    onValueChange: (Int) -> Unit,
-    modifier: Modifier = Modifier
-) {
+fun CounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
+    var textValue by remember(value) { mutableStateOf(value.toString()) }
+
     Row(
-        modifier = modifier
-            .fillMaxWidth()
-            .padding(vertical = 8.dp),
+        verticalAlignment = Alignment.CenterVertically,
         horizontalArrangement = Arrangement.SpaceBetween,
-        verticalAlignment = Alignment.CenterVertically
+        modifier = Modifier
+            .fillMaxWidth()
+            .padding(vertical = 4.dp)
     ) {
-        Text(
-            text = label, 
-            style = MaterialTheme.typography.bodyLarge, 
-            fontWeight = FontWeight.SemiBold,
-            color = Color.Black,
-            modifier = Modifier.weight(1f)
-        )
+        Text(text = label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        
         Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(
-                onClick = { if (value > 0) onValueChange(value - 1) },
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(MaterialTheme.colorScheme.primary.copy(alpha = 0.1f), androidx.compose.foundation.shape.CircleShape)
-            ) {
-                Icon(Icons.Default.Remove, contentDescription = "Menos", tint = MaterialTheme.colorScheme.primary)
+            FilledTonalIconButton(onClick = { 
+                if (value > 0) onValueChange(value - 1) 
+            }) {
+                Text("-", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             }
             
             OutlinedTextField(
-                value = value.toString(),
-                onValueChange = { newValue ->
-                    newValue.toIntOrNull()?.let { if (it >= 0) onValueChange(it) }
+                value = textValue,
+                onValueChange = { 
+                    textValue = it
+                    val intValue = it.toIntOrNull()
+                    if (intValue != null && intValue >= 0) {
+                        onValueChange(intValue)
+                    } else if (it.isEmpty()) {
+                        onValueChange(0)
+                    }
                 },
-                modifier = Modifier
-                    .width(70.dp)
-                    .padding(horizontal = 8.dp),
-                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, color = Color.Black),
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                modifier = Modifier
+                    .width(80.dp)
+                    .padding(horizontal = 8.dp),
                 singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = MaterialTheme.colorScheme.primary,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.primary.copy(alpha = 0.3f),
-                    focusedContainerColor = Color.Transparent,
-                    unfocusedContainerColor = Color.Transparent
-                )
+                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 18.sp),
+                shape = RoundedCornerShape(8.dp)
             )
             
-            IconButton(
-                onClick = { onValueChange(value + 1) },
-                modifier = Modifier
-                    .size(40.dp)
-                    .background(MaterialTheme.colorScheme.primary, androidx.compose.foundation.shape.CircleShape)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Mas", tint = Color.White)
+            FilledTonalIconButton(onClick = { onValueChange(value + 1) }) {
+                Icon(Icons.Default.Add, contentDescription = "Más")
             }
         }
     }
@@ -984,7 +942,7 @@ fun DefectCategorySection(
                     CALIBRES.forEachIndexed { index, calibre ->
                         val key = "${category}_${calibre}"
                         val value = calibreValues[key] ?: 0
-                        ElegantCounter(
+                        CounterRow(
                             label = calibre,
                             value = value,
                             onValueChange = { newValue -> onValueChange(key, newValue) }
@@ -1102,10 +1060,26 @@ fun SummaryLabel(label: String, value: Int) {
     }
 }
 
+@Composable
+fun CounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
+    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
+        if (label.isNotEmpty()) Text(label, style = MaterialTheme.typography.bodyMedium)
+        Row(verticalAlignment = Alignment.CenterVertically) {
+            IconButton(onClick = { if (value > 0) onValueChange(value - 1) }) {
+                Icon(Icons.Default.Remove, contentDescription = "Decrementar")
+            }
+            Text(value.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp))
+            IconButton(onClick = { onValueChange(value + 1) }) {
+                Icon(Icons.Default.Add, contentDescription = "Incrementar")
+            }
+        }
+    }
+}
+
 @Preview(showBackground = true)
 @Composable
 fun AppPreview() {
-    ElegantTheme {
+    AplicativoEstimacionesTheme {
         MainApp()
     }
 }
