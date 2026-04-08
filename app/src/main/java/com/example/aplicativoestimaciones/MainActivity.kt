@@ -54,25 +54,39 @@ fun readCsvData(filePath: String): List<BloqueData> {
     val list = mutableListOf<BloqueData>()
     val file = File(filePath)
     
-    // Add some fallback data so the user sees something even if file isn't found
+    // Fallback data for easy verification
     val fallback = listOf(
-        BloqueData("Bloque 1", "Grupo Forza A"),
-        BloqueData("Bloque 2", "Grupo Forza A"),
-        BloqueData("Bloque 10", "Grupo Forza B"),
-        BloqueData("Bloque 15", "Grupo Forza B")
+        BloqueData("BLOQUE_PRUEBA_1", "GRUPO_PRUEBA_A"),
+        BloqueData("BLOQUE_PRUEBA_2", "GRUPO_PRUEBA_A"),
+        BloqueData("BLOQUE_PRUEBA_10", "GRUPO_PRUEBA_B")
     )
     
     if (!file.exists()) return fallback
     
     try {
-        BufferedReader(FileReader(file)).use { reader ->
-            var line: String? = reader.readLine() // Skip header
-            while (reader.readLine().also { line = it } != null) {
-                // Handle both comma and semicolon
-                val tokens = line?.split(Regex("[,;]")) ?: continue
+        // Use specifically UTF-8 and handle potential BOM
+        file.bufferedReader(charset = Charsets.UTF_8).use { reader ->
+            reader.forEachLine { rawLine ->
+                val line = rawLine.replace("\uFEFF", "").trim()
+                if (line.isEmpty()) return@forEachLine
+                
+                // Skip common headers
+                if (line.startsWith("Bloque", ignoreCase = true) || line.startsWith("GF", ignoreCase = true)) return@forEachLine
+                
+                // Try splitting by semicolon first (common in Spanish Excel), then comma, then tab
+                val delimiters = listOf(";", ",", "\t")
+                var tokens = emptyList<String>()
+                for (delim in delimiters) {
+                    val t = line.split(delim)
+                    if (t.size >= 5) {
+                        tokens = t
+                        break
+                    }
+                }
+                
                 if (tokens.size >= 5) {
-                    val bloque = tokens[2].trim().removeSurrounding("\"") // USAR COLUMNA PC
-                    val gf = tokens[4].trim().removeSurrounding("\"")     // USAR COLUMNA GF
+                    val bloque = tokens[2].trim().removeSurrounding("\"").trim()
+                    val gf = tokens[4].trim().removeSurrounding("\"").trim()
                     if (bloque.isNotEmpty() && gf.isNotEmpty()) {
                         list.add(BloqueData(bloque, gf))
                     }
@@ -349,7 +363,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGrupo) }
                         )
 
-                        val filteredGrupos = gruposUnicos.filter { it.contains(grupoForza, ignoreCase = true) }
+                        val filteredGrupos = gruposUnicos.filter { it.trim().contains(grupoForza.trim(), ignoreCase = true) }
 
                         if (expandedGrupo && filteredGrupos.isNotEmpty()) {
                             DropdownMenu(
@@ -392,7 +406,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                             trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedBloque) }
                         )
 
-                        val filteredBloques = bloquesUnicos.filter { it.contains(bloque, ignoreCase = true) }
+                        val filteredBloques = bloquesUnicos.filter { it.trim().contains(bloque.trim(), ignoreCase = true) }
 
                         if (expandedBloque && filteredBloques.isNotEmpty()) {
                             DropdownMenu(
