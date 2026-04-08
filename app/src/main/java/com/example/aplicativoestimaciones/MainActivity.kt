@@ -1,10 +1,5 @@
 package com.example.aplicativoestimaciones
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
-import androidx.compose.foundation.background
 import java.io.BufferedReader
 import java.io.File
 import java.io.FileOutputStream
@@ -19,6 +14,9 @@ import android.content.Context
 import android.net.Uri
 import android.provider.MediaStore
 import android.widget.Toast
+import androidx.activity.ComponentActivity
+import androidx.activity.compose.setContent
+import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.focus.*
@@ -28,6 +26,7 @@ import org.json.JSONArray
 import org.json.JSONObject
 import java.io.*
 import java.nio.charset.StandardCharsets
+import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -63,6 +62,34 @@ val DEFECTOS = listOf("Enferma", "Quema Sol Severo", "Deforme", "Daño Insecto",
 val FUERA_ESPEC_CATS = listOf("Cuello", "Cónica", "Cicatriz", "Base café", "Cónica Inclinada", "Corona Pequeña", "Corona Grande", "Corona Múltiple", "Cochinilla", "Off Color", "Quema Sol Leve")
 val FUERA_ESPEC_SINGLE = "Deforme"
 val ESPEC_TYPES = listOf("Tolerable", "No Tolerable")
+
+// --- ELEGANT COLOR PALETTE ---
+val PrimaryEarth = Color(0xFF7D725C)
+val SecondaryGold = Color(0xFFBAAA89)
+val BackgroundCream = Color(0xFFFBF9F5)
+val SurfaceCream = Color(0xFFFCFBF9)
+
+@Composable
+fun FruitTheme(content: @Composable () -> Unit) {
+    val colorScheme = lightColorScheme(
+        primary = PrimaryEarth,
+        onPrimary = Color.White,
+        secondary = SecondaryGold,
+        onSecondary = Color.Black,
+        background = BackgroundCream,
+        surface = SurfaceCream,
+        onSurface = Color.Black,
+        primaryContainer = PrimaryEarth,
+        onPrimaryContainer = Color.White,
+        secondaryContainer = SecondaryGold,
+        onSecondaryContainer = Color.Black
+    )
+    MaterialTheme(
+        colorScheme = colorScheme,
+        typography = Typography(),
+        content = content
+    )
+}
 
 data class BloqueData(
     val bloque: String,
@@ -227,7 +254,7 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
         setContent {
-            AplicativoEstimacionesTheme {
+            FruitTheme {
                 MainApp()
             }
         }
@@ -316,14 +343,14 @@ fun HomeButton(text: String, icon: ImageVector, onClick: () -> Unit) {
             .height(72.dp),
         shape = RoundedCornerShape(20.dp),
         colors = ButtonDefaults.buttonColors(
-            containerColor = MaterialTheme.colorScheme.primaryContainer,
-            contentColor = MaterialTheme.colorScheme.onPrimaryContainer
+            containerColor = PrimaryEarth,
+            contentColor = Color.White
         ),
         elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
     ) {
         Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(28.dp))
         Spacer(modifier = Modifier.width(16.dp))
-        Text(text, fontSize = 20.sp, fontWeight = FontWeight.SemiBold)
+        Text(text, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
     }
 }
 
@@ -346,13 +373,12 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     var semana by remember { mutableStateOf(currentWeek) }
     var grupoForza by remember { mutableStateOf("") }
     var bloque by remember { mutableStateOf("") }
-    // var lote removed
     
     // Dropdown States
     var expandedGrupo by remember { mutableStateOf(false) }
     var expandedBloque by remember { mutableStateOf(false) }
     
-    // Unique options (MUALLY FILTERED)
+    // Unique options
     val gruposUnicos = remember(csvData, bloque) { 
         if (bloque.isEmpty()) {
             csvData.map { it.grupoForza }.distinct().sorted()
@@ -389,7 +415,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
 
     // Multi-level counters for Non-Recovered by Calibre
     val nonRecoveredByCalibre = remember { mutableStateMapOf<String, Int>() }
-    // Initialize map if empty (recommended for stability)
+    // Initialize map if empty
     LaunchedEffect(Unit) {
         if (nonRecoveredByCalibre.isEmpty()) {
             DEFECTOS.forEach { defect ->
@@ -400,12 +426,11 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
         }
     }
     
-    // Counters for Fuera Especificación (~200 items)
+    // Counters for Fuera Especificación
     val fueraEspecificacionCounters = remember { mutableStateMapOf<String, Int>() }
     
     LaunchedEffect(Unit) {
         if (fueraEspecificacionCounters.isEmpty()) {
-            // Default 11 categories (Dual counter per calibre)
             FUERA_ESPEC_CATS.forEach { cat ->
                 CALIBRES.forEach { calibre ->
                     ESPEC_TYPES.forEach { type ->
@@ -413,40 +438,18 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     }
                 }
             }
-            // Deforme category (Single counter per calibre)
             CALIBRES.forEach { calibre ->
                 fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] = 0
             }
         }
     }
 
-    // --- REAL-TIME TOTALS CALCULATION ---
+    // REAL-TIME TOTALS
     val calidadTotal by remember { derivedStateOf { c5 + c6 + c7 + c8 + c9 + c10 + c8p + guapita + babyGuapa } }
     val noRecTotal by remember { derivedStateOf { ausente + dano + sinInducir + bajoPeso + muestreo + frutaJoven } }
     val noRecCalTotal by remember { derivedStateOf { nonRecoveredByCalibre.values.sum() } }
     val fueraEspecTotal by remember { derivedStateOf { fueraEspecificacionCounters.values.sum() } }
     val totalGeneral by remember { derivedStateOf { calidadTotal + noRecTotal + noRecCalTotal + fueraEspecTotal } }
-
-    var showDatePicker by remember { mutableStateOf(false) }
-    val datePickerState = rememberDatePickerState()
-
-    if (showDatePicker) {
-        DatePickerDialog(
-            onDismissRequest = { showDatePicker = false },
-            confirmButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Aceptar")
-                }
-            },
-            dismissButton = {
-                TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancelar")
-                }
-            }
-        ) {
-            DatePicker(state = datePickerState)
-        }
-    }
 
     Scaffold(
         topBar = {
@@ -472,7 +475,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // --- SUMMARY CARD (TOTAL REAL-TIME) ---
+            // --- SUMMARY CARD ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
@@ -576,7 +579,6 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     }
                     Spacer(modifier = Modifier.height(12.dp))
 
-
                     ExposedDropdownMenuBox(
                         expanded = expandedBloque,
                         onExpandedChange = { expandedBloque = !expandedBloque },
@@ -620,7 +622,6 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                         }
                     }
                     Spacer(modifier = Modifier.height(12.dp))
-
                 }
             }
 
@@ -681,6 +682,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     CounterRow("Fruta Joven", frutaJoven) { frutaJoven = it }
                 }
             }
+            
             Spacer(modifier = Modifier.height(24.dp))
 
             Card(
@@ -717,7 +719,6 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     Text("Fruta Fuera Especificación", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(12.dp))
                     
-                    // Single counter category: Deforme
                     FueraEspecificacionDeepCategorySection(
                         category = FUERA_ESPEC_SINGLE,
                         isDouble = false,
@@ -729,7 +730,6 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 1.dp)
 
-                    // Double counter categories
                     FUERA_ESPEC_CATS.forEach { cat ->
                         FueraEspecificacionDeepCategorySection(
                             category = cat,
@@ -747,7 +747,8 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
             Button(
                 onClick = onBack,
                 modifier = Modifier.fillMaxWidth().height(56.dp),
-                shape = RoundedCornerShape(12.dp)
+                shape = RoundedCornerShape(12.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = PrimaryEarth, contentColor = Color.White)
             ) {
                 Text("Guardar", fontSize = 18.sp, fontWeight = FontWeight.Bold)
             }
@@ -760,9 +761,9 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
 fun blackTextFieldColors() = OutlinedTextFieldDefaults.colors(
     focusedTextColor = Color.Black,
     unfocusedTextColor = Color.Black,
-    focusedBorderColor = MaterialTheme.colorScheme.primary,
+    focusedBorderColor = PrimaryEarth,
     unfocusedBorderColor = Color.Gray,
-    focusedLabelColor = MaterialTheme.colorScheme.primary,
+    focusedLabelColor = PrimaryEarth,
     unfocusedLabelColor = Color.Gray
 )
 
@@ -780,9 +781,10 @@ fun CounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
         Text(text = label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
         
         Row(verticalAlignment = Alignment.CenterVertically) {
-            FilledTonalIconButton(onClick = { 
-                if (value > 0) onValueChange(value - 1) 
-            }) {
+            FilledIconButton(
+                onClick = { if (value > 0) onValueChange(value - 1) },
+                colors = IconButtonDefaults.filledIconButtonColors(containerColor = SecondaryGold, contentColor = Color.Black)
+            ) {
                 Text("-", fontSize = 24.sp, fontWeight = FontWeight.Bold)
             }
             
@@ -802,11 +804,18 @@ fun CounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
                     .width(80.dp)
                     .padding(horizontal = 8.dp),
                 singleLine = true,
-                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 18.sp),
-                shape = RoundedCornerShape(8.dp)
+                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black),
+                shape = RoundedCornerShape(8.dp),
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = PrimaryEarth,
+                    unfocusedBorderColor = SecondaryGold
+                )
             )
             
-            FilledTonalIconButton(onClick = { onValueChange(value + 1) }) {
+            FilledIconButton(
+                onClick = { onValueChange(value + 1) },
+                colors = IconButtonDefaults.filledIconButtonColors(containerColor = PrimaryEarth, contentColor = Color.White)
+            ) {
                 Icon(Icons.Default.Add, contentDescription = "Más")
             }
         }
@@ -827,8 +836,7 @@ fun FueraEspecificacionDeepCategorySection(
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (expanded) MaterialTheme.colorScheme.secondaryContainer.copy(alpha = 0.3f) 
-                             else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
+            containerColor = if (expanded) SecondaryGold.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -842,10 +850,10 @@ fun FueraEspecificacionDeepCategorySection(
                     text = category,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.secondary
+                    color = PrimaryEarth
                 )
                 TextButton(onClick = { expanded = !expanded }) {
-                    Text(if (expanded) "Cerrar" else "Abrir", fontWeight = FontWeight.SemiBold)
+                    Text(if (expanded) "Cerrar" else "Abrir", fontWeight = FontWeight.SemiBold, color = PrimaryEarth)
                 }
             }
 
@@ -882,7 +890,7 @@ fun FueraEspecificacionCalibreRow(
     onVal2Change: (Int) -> Unit
 ) {
     Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(text = label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Text(text = label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = PrimaryEarth)
         Spacer(modifier = Modifier.height(4.dp))
         Row(
             modifier = Modifier.fillMaxWidth(),
@@ -890,12 +898,12 @@ fun FueraEspecificacionCalibreRow(
             verticalAlignment = Alignment.CenterVertically
         ) {
             Column(modifier = Modifier.weight(1f)) {
-                if (isDouble) Text("Tolerable", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                if (isDouble) Text("Tolerable", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                 CounterRow(label = "", value = val1, onValueChange = onVal1Change)
             }
             if (isDouble) {
                 Column(modifier = Modifier.weight(1f)) {
-                    Text("No Tolerable", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
+                    Text("No Tolerable", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
                     CounterRow(label = "", value = val2, onValueChange = onVal2Change)
                 }
             }
@@ -916,8 +924,7 @@ fun DefectCategorySection(
             .fillMaxWidth()
             .padding(vertical = 4.dp),
         colors = CardDefaults.cardColors(
-            containerColor = if (expanded) MaterialTheme.colorScheme.primaryContainer.copy(alpha = 0.3f) 
-                             else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.4f)
+            containerColor = if (expanded) SecondaryGold.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
         ),
         shape = RoundedCornerShape(12.dp)
     ) {
@@ -931,10 +938,10 @@ fun DefectCategorySection(
                     text = category,
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.primary
+                    color = PrimaryEarth
                 )
                 TextButton(onClick = { expanded = !expanded }) {
-                    Text(if (expanded) "Cerrar" else "Abrir", fontWeight = FontWeight.SemiBold)
+                    Text(if (expanded) "Cerrar" else "Abrir", fontWeight = FontWeight.SemiBold, color = PrimaryEarth)
                 }
             }
 
@@ -964,8 +971,6 @@ fun DefectCategorySection(
 fun HistorialScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val records = remember { getHistorial(context) }
-    
-    // Group records by metadata for better UI organization
     val groupedRecords = records.groupBy { "${it.grupoForza} - ${it.bloque}" }
 
     Scaffold(
@@ -983,8 +988,10 @@ fun HistorialScreen(onBack: () -> Unit) {
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
-                    containerColor = MaterialTheme.colorScheme.primaryContainer,
-                    titleContentColor = MaterialTheme.colorScheme.onPrimaryContainer
+                    containerColor = PrimaryEarth,
+                    titleContentColor = Color.White,
+                    navigationIconContentColor = Color.White,
+                    actionIconContentColor = Color.White
                 )
             )
         }
@@ -1006,7 +1013,7 @@ fun HistorialScreen(onBack: () -> Unit) {
                 groupedRecords.forEach { (groupKey, groupRecords) ->
                     item {
                         Surface(
-                            color = MaterialTheme.colorScheme.secondaryContainer,
+                            color = SecondaryGold.copy(alpha = 0.8f),
                             shape = RoundedCornerShape(8.dp),
                             modifier = Modifier.padding(top = 8.dp)
                         ) {
@@ -1014,7 +1021,7 @@ fun HistorialScreen(onBack: () -> Unit) {
                                 text = groupKey,
                                 style = MaterialTheme.typography.labelLarge,
                                 fontWeight = FontWeight.ExtraBold,
-                                color = MaterialTheme.colorScheme.onSecondaryContainer,
+                                color = Color.Black,
                                 modifier = Modifier.padding(horizontal = 12.dp, vertical = 4.dp)
                             )
                         }
@@ -1024,12 +1031,12 @@ fun HistorialScreen(onBack: () -> Unit) {
                             modifier = Modifier.fillMaxWidth(),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.5f))
+                            colors = CardDefaults.cardColors(containerColor = SurfaceCream)
                         ) {
                             Column(Modifier.padding(16.dp)) {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Text(record.date, style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.primary)
-                                    Text("Semana ${record.week}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold)
+                                    Text(record.date, style = MaterialTheme.typography.labelSmall, color = PrimaryEarth)
+                                    Text("Semana ${record.week}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color.Black)
                                 }
                                 Spacer(Modifier.height(12.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
@@ -1049,16 +1056,15 @@ fun HistorialScreen(onBack: () -> Unit) {
 @Composable
 fun SummaryMiniItem(label: String, value: Int) {
     Column(horizontalAlignment = Alignment.CenterHorizontally) {
-        Text(value.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+        Text(value.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = PrimaryEarth)
         Text(label, style = MaterialTheme.typography.labelSmall, color = Color.Gray)
     }
 }
 
-
 @Preview(showBackground = true)
 @Composable
 fun AppPreview() {
-    AplicativoEstimacionesTheme {
+    FruitTheme {
         MainApp()
     }
 }
