@@ -126,6 +126,8 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     var c9 by remember { mutableIntStateOf(0) }
     var c10 by remember { mutableIntStateOf(0) }
     var c8p by remember { mutableIntStateOf(0) }
+    var guapita by remember { mutableIntStateOf(0) }
+    var babyGuapa by remember { mutableIntStateOf(0) }
 
     var showDatePicker by remember { mutableStateOf(false) }
     val datePickerState = rememberDatePickerState()
@@ -298,6 +300,10 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     CounterRow("C10", c10) { c10 = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                     CounterRow("C8P", c8p) { c8p = it }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    CounterRow("Guapita", guapita) { guapita = it }
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
+                    CounterRow("Baby Guapa", babyGuapa) { babyGuapa = it }
                 }
             }
             
