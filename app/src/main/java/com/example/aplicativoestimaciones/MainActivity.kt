@@ -1,9 +1,15 @@
 package com.example.aplicativoestimaciones
 
-import android.os.Bundle
-import androidx.activity.ComponentActivity
-import androidx.activity.compose.setContent
-import androidx.activity.enableEdgeToEdge
+import java.io.BufferedReader
+import java.io.File
+import java.io.FileReader
+import java.io.IOException
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import androidx.compose.ui.focus.*
+import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -38,6 +44,34 @@ val DEFECTOS = listOf("Enferma", "Quema Sol Severo", "Deforme", "Daño Insecto",
 val FUERA_ESPEC_CATS = listOf("Cuello", "Cónica", "Cicatriz", "Base café", "Cónica Inclinada", "Corona Pequeña", "Corona Grande", "Corona Múltiple", "Cochinilla", "Off Color", "Quema Sol Leve")
 val FUERA_ESPEC_SINGLE = "Deforme"
 val ESPEC_TYPES = listOf("Tolerable", "No Tolerable")
+
+data class BloqueData(
+    val bloque: String,
+    val grupoForza: String
+)
+
+fun readCsvData(filePath: String): List<BloqueData> {
+    val list = mutableListOf<BloqueData>()
+    val file = File(filePath)
+    if (!file.exists()) return list
+    
+    try {
+        BufferedReader(FileReader(file)).use { reader ->
+            var line: String? = reader.readLine() // Read header
+            while (reader.readLine().also { line = it } != null) {
+                val tokens = line?.split(",") ?: continue
+                if (tokens.size >= 5) {
+                    val bloque = tokens[0].trim().removeSurrounding("\"")
+                    val gf = tokens[4].trim().removeSurrounding("\"")
+                    list.add(BloqueData(bloque, gf))
+                }
+            }
+        }
+    } catch (e: Exception) {
+        e.printStackTrace()
+    }
+    return list
+}
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -119,12 +153,37 @@ fun HomeButton(text: String, icon: ImageVector, onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IngresarDatosScreen(onBack: () -> Unit) {
-    var semana by remember { mutableStateOf("") }
+    val focusManager = LocalFocusManager.current
+    
+    // CSV Data
+    val csvData = remember { 
+        readCsvData("C:\\Users\\sotoc\\Downloads\\grupo_forza.csv")
+    }
+    
+    // Current Time and Week Logic
+    val calendar = Calendar.getInstance()
+    val currentWeek = calendar.get(Calendar.WEEK_OF_YEAR).toString()
+    val currentTime = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+
+    var semana by remember { mutableStateOf(currentWeek) }
     var grupoForza by remember { mutableStateOf("") }
     var lote by remember { mutableStateOf("") }
     var bloque by remember { mutableStateOf("") }
-    var desarrollo by remember { mutableStateOf("PC") } // Default value
     
+    // Dropdown States
+    var expandedGrupo by remember { mutableStateOf(false) }
+    var expandedBloque by remember { mutableStateOf(false) }
+    
+    // Unique options
+    val gruposUnicos = remember(csvData) { csvData.map { it.grupoForza }.distinct().sorted() }
+    val bloquesUnicos = remember(csvData, grupoForza) { 
+        if (grupoForza.isEmpty()) {
+            csvData.map { it.bloque }.distinct().sorted()
+        } else {
+            csvData.filter { it.grupoForza == grupoForza }.map { it.bloque }.distinct().sorted()
+        }
+    }
+
     // Counters
     var c5 by remember { mutableIntStateOf(0) }
     var c6 by remember { mutableIntStateOf(0) }
@@ -232,22 +291,12 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     Text("Información General", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(20.dp))
                     
-                    val selectedDateText = datePickerState.selectedDateMillis?.let {
-                        val formatter = SimpleDateFormat("dd/MM/yyyy", Locale.getDefault())
-                        formatter.format(Date(it))
-                    } ?: "Seleccionar fecha"
-                    
                     OutlinedTextField(
-                        value = selectedDateText,
+                        value = currentTime,
                         onValueChange = {},
                         label = { Text("Fecha de Actividad") },
                         readOnly = true,
                         modifier = Modifier.fillMaxWidth(),
-                        trailingIcon = {
-                            IconButton(onClick = { showDatePicker = true }) {
-                                Text("📅", fontSize = 24.sp)
-                            }
-                        },
                         shape = RoundedCornerShape(12.dp)
                     )
                     Spacer(modifier = Modifier.height(12.dp))
@@ -262,25 +311,53 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(12.dp))
                     
-                    OutlinedTextField(
-                        value = grupoForza,
-                        onValueChange = { grupoForza = it },
-                        label = { Text("Grupo Forza") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    )
+                    ExposedDropdownMenuBox(
+                        expanded = expandedGrupo,
+                        onExpandedChange = { expandedGrupo = !expandedGrupo },
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        OutlinedTextField(
+                            value = grupoForza,
+                            onValueChange = { grupoForza = it },
+                            label = { Text("Grupo Forza") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                                .onFocusChanged { expandedGrupo = it.isFocused },
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true,
+                            colors = blackTextFieldColors(),
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGrupo) }
+                        )
+
+                        val filteredGrupos = gruposUnicos.filter { it.contains(grupoForza, ignoreCase = true) }
+
+                        if (expandedGrupo && filteredGrupos.isNotEmpty()) {
+                            DropdownMenu(
+                                expanded = expandedGrupo,
+                                onDismissRequest = { expandedGrupo = false },
+                                modifier = Modifier.exposedDropdownSize().heightIn(max = 250.dp).background(Color(0xFFEAD7BC))
+                            ) {
+                                filteredGrupos.forEach { gf ->
+                                    DropdownMenuItem(
+                                        text = { Text(gf, color = Color.Black) },
+                                        onClick = {
+                                            grupoForza = gf
+                                            expandedGrupo = false
+                                            focusManager.clearFocus()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
                     Spacer(modifier = Modifier.height(12.dp))
 
                     OutlinedTextField(
                         value = lote,
                         onValueChange = { input ->
-                            if (input.isEmpty()) {
-                                lote = ""
-                            } else {
-                                val num = input.toIntOrNull()
-                                if (num != null && num in 1..87) {
-                                    lote = input
-                                }
+                            if (input.isEmpty() || (input.toIntOrNull() != null && input.toInt() in 1..87)) {
+                                lote = input
                             }
                         },
                         label = { Text("Lote (1-87)") },
@@ -290,36 +367,50 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     )
                     Spacer(modifier = Modifier.height(12.dp))
 
-                    OutlinedTextField(
-                        value = bloque,
-                        onValueChange = { bloque = it },
-                        label = { Text("Número del Bloque") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
-                    )
-                    Spacer(modifier = Modifier.height(12.dp))
-
-                    Text("Desarrollo", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    SingleChoiceSegmentedButtonRow(
+                    ExposedDropdownMenuBox(
+                        expanded = expandedBloque,
+                        onExpandedChange = { expandedBloque = !expandedBloque },
                         modifier = Modifier.fillMaxWidth()
                     ) {
-                        SegmentedButton(
-                            selected = desarrollo == "PC",
-                            onClick = { desarrollo = "PC" },
-                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
-                        ) {
-                            Text("PC")
-                        }
-                        SegmentedButton(
-                            selected = desarrollo == "SC",
-                            onClick = { desarrollo = "SC" },
-                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
-                        ) {
-                            Text("SC")
+                        OutlinedTextField(
+                            value = bloque,
+                            onValueChange = { bloque = it },
+                            label = { Text("Número del Bloque") },
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .menuAnchor()
+                                .onFocusChanged { expandedBloque = it.isFocused },
+                            shape = RoundedCornerShape(12.dp),
+                            singleLine = true,
+                            colors = blackTextFieldColors(),
+                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedBloque) }
+                        )
+
+                        val filteredBloques = bloquesUnicos.filter { it.contains(bloque, ignoreCase = true) }
+
+                        if (expandedBloque && filteredBloques.isNotEmpty()) {
+                            DropdownMenu(
+                                expanded = expandedBloque,
+                                onDismissRequest = { expandedBloque = false },
+                                modifier = Modifier.exposedDropdownSize().heightIn(max = 250.dp).background(Color(0xFFEAD7BC))
+                            ) {
+                                filteredBloques.forEach { blq ->
+                                    DropdownMenuItem(
+                                        text = { Text(blq, color = Color.Black) },
+                                        onClick = {
+                                            bloque = blq
+                                            expandedBloque = false
+                                            val matchedGf = csvData.firstOrNull { it.bloque == blq }?.grupoForza
+                                            if (matchedGf != null) grupoForza = matchedGf
+                                            focusManager.clearFocus()
+                                        }
+                                    )
+                                }
+                            }
                         }
                     }
+                    Spacer(modifier = Modifier.height(12.dp))
+
                 }
             }
 
@@ -454,6 +545,16 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
         }
     }
 }
+
+@Composable
+fun blackTextFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedTextColor = Color.Black,
+    unfocusedTextColor = Color.Black,
+    focusedBorderColor = MaterialTheme.colorScheme.primary,
+    unfocusedBorderColor = Color.Gray,
+    focusedLabelColor = MaterialTheme.colorScheme.primary,
+    unfocusedLabelColor = Color.Gray
+)
 
 @Composable
 fun CounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
