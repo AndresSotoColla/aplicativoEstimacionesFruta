@@ -71,8 +71,8 @@ fun readCsvData(filePath: String): List<BloqueData> {
                 // Handle both comma and semicolon
                 val tokens = line?.split(Regex("[,;]")) ?: continue
                 if (tokens.size >= 5) {
-                    val bloque = tokens[0].trim().removeSurrounding("\"")
-                    val gf = tokens[4].trim().removeSurrounding("\"")
+                    val bloque = tokens[2].trim().removeSurrounding("\"") // USAR COLUMNA PC
+                    val gf = tokens[4].trim().removeSurrounding("\"")     // USAR COLUMNA GF
                     if (bloque.isNotEmpty() && gf.isNotEmpty()) {
                         list.add(BloqueData(bloque, gf))
                     }
@@ -187,8 +187,14 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     var expandedGrupo by remember { mutableStateOf(false) }
     var expandedBloque by remember { mutableStateOf(false) }
     
-    // Unique options
-    val gruposUnicos = remember(csvData) { csvData.map { it.grupoForza }.distinct().sorted() }
+    // Unique options (MUALLY FILTERED)
+    val gruposUnicos = remember(csvData, bloque) { 
+        if (bloque.isEmpty()) {
+            csvData.map { it.grupoForza }.distinct().sorted()
+        } else {
+            csvData.filter { it.bloque == bloque }.map { it.grupoForza }.distinct().sorted()
+        }
+    }
     val bloquesUnicos = remember(csvData, grupoForza) { 
         if (grupoForza.isEmpty()) {
             csvData.map { it.bloque }.distinct().sorted()
