@@ -47,9 +47,12 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
-import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.saveable.Saver
+import androidx.compose.runtime.snapshots.SnapshotStateMap
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
@@ -223,6 +226,12 @@ fun jsonToMap(json: JSONObject?): Map<String, Int> {
     return map
 }
 
+// Custom saver for SnapshotStateMap to survive rotation
+val MapSaver = Saver<SnapshotStateMap<String, Int>, Map<String, Int>>(
+    save = { it.toMap() },
+    restore = { mutableStateMapOf<String, Int>().apply { putAll(it) } }
+)
+
 fun readCsvData(context: Context): List<BloqueData> {
     val list = mutableListOf<BloqueData>()
     val fileName = "grupo_forza.csv"
@@ -393,7 +402,7 @@ enum class Screen {
 
 @Composable
 fun MainApp() {
-    var currentScreen by remember { mutableStateOf(Screen.Home) }
+    var currentScreen by rememberSaveable { mutableStateOf(Screen.Home) }
 
     when (currentScreen) {
         Screen.Home -> HomeScreen(
@@ -500,6 +509,9 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     
+    // Intercept system back button
+    BackHandler { onBack() }
+    
     // CSV Data (reloads when entering screen)
     val csvData = remember { 
         readCsvData(context)
@@ -508,17 +520,17 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     // Current Time and Week Logic
     val calendar = Calendar.getInstance()
     val currentWeek = calendar.get(Calendar.WEEK_OF_YEAR).toString()
-    val currentTime = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
+    val currentTime = rememberSaveable { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date()) }
 
-    var semana by remember { mutableStateOf(currentWeek) }
-    var grupoForza by remember { mutableStateOf("") }
-    var bloque by remember { mutableStateOf("") }
+    var semana by rememberSaveable { mutableStateOf(currentWeek) }
+    var grupoForza by rememberSaveable { mutableStateOf("") }
+    var bloque by rememberSaveable { mutableStateOf("") }
     
     // Dropdown States
-    var expandedGrupo by remember { mutableStateOf(false) }
-    var expandedBloque by remember { mutableStateOf(false) }
+    var expandedGrupo by rememberSaveable { mutableStateOf(false) }
+    var expandedBloque by rememberSaveable { mutableStateOf(false) }
     
-    // Unique options
+    // Unique options (These can be remember because they are derived from csvData and saved state)
     val gruposUnicos = remember(csvData, bloque) { 
         if (bloque.isEmpty()) {
             csvData.map { it.grupoForza }.distinct().sorted()
@@ -534,28 +546,28 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
         }
     }
 
-    // Counters
-    var c5 by remember { mutableIntStateOf(0) }
-    var c6 by remember { mutableIntStateOf(0) }
-    var c7 by remember { mutableIntStateOf(0) }
-    var c8 by remember { mutableIntStateOf(0) }
-    var c9 by remember { mutableIntStateOf(0) }
-    var c10 by remember { mutableIntStateOf(0) }
-    var c8p by remember { mutableIntStateOf(0) }
-    var guapita by remember { mutableIntStateOf(0) }
-    var babyGuapa by remember { mutableIntStateOf(0) }
+    // Counters - use rememberSaveable so they persist on rotation!
+    var c5 by rememberSaveable { mutableIntStateOf(0) }
+    var c6 by rememberSaveable { mutableIntStateOf(0) }
+    var c7 by rememberSaveable { mutableIntStateOf(0) }
+    var c8 by rememberSaveable { mutableIntStateOf(0) }
+    var c9 by rememberSaveable { mutableIntStateOf(0) }
+    var c10 by rememberSaveable { mutableIntStateOf(0) }
+    var c8p by rememberSaveable { mutableIntStateOf(0) }
+    var guapita by rememberSaveable { mutableIntStateOf(0) }
+    var babyGuapa by rememberSaveable { mutableIntStateOf(0) }
     
     // Non-recovered fruit counters
-    var ausente by remember { mutableIntStateOf(0) }
-    var dano by remember { mutableIntStateOf(0) }
-    var sinInducir by remember { mutableIntStateOf(0) }
-    var bajoPeso by remember { mutableIntStateOf(0) }
-    var muestreo by remember { mutableIntStateOf(0) }
-    var frutaJoven by remember { mutableIntStateOf(0) }
+    var ausente by rememberSaveable { mutableIntStateOf(0) }
+    var dano by rememberSaveable { mutableIntStateOf(0) }
+    var sinInducir by rememberSaveable { mutableIntStateOf(0) }
+    var bajoPeso by rememberSaveable { mutableIntStateOf(0) }
+    var muestreo by rememberSaveable { mutableIntStateOf(0) }
+    var frutaJoven by rememberSaveable { mutableIntStateOf(0) }
 
     // Multi-level counters for Non-Recovered by Calibre
-    val nonRecoveredByCalibre = remember { mutableStateMapOf<String, Int>() }
-    // Initialize map if empty
+    val nonRecoveredByCalibre = rememberSaveable(saver = MapSaver) { mutableStateMapOf<String, Int>() }
+    // Initialize map IF IT IS NEW (not restored)
     LaunchedEffect(Unit) {
         if (nonRecoveredByCalibre.isEmpty()) {
             DEFECTOS.forEach { defect ->
@@ -567,7 +579,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     }
     
     // Counters for Fuera Especificación
-    val fueraEspecificacionCounters = remember { mutableStateMapOf<String, Int>() }
+    val fueraEspecificacionCounters = rememberSaveable(saver = MapSaver) { mutableStateMapOf<String, Int>() }
     
     LaunchedEffect(Unit) {
         if (fueraEspecificacionCounters.isEmpty()) {
@@ -1135,6 +1147,10 @@ fun DefectCategorySection(
 @Composable
 fun HistorialScreen(onBack: () -> Unit) {
     val context = LocalContext.current
+    
+    // Intercept system back button
+    BackHandler { onBack() }
+    
     var records by remember { mutableStateOf(getHistorial(context)) }
     
     // Deletion states
