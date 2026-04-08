@@ -47,13 +47,12 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.List
 import androidx.compose.material.icons.filled.Remove
 import androidx.compose.material3.*
-import androidx.compose.ui.Alignment
-import androidx.compose.ui.Modifier
-import androidx.activity.compose.BackHandler
+import androidx.compose.runtime.*
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.saveable.Saver
 import androidx.compose.runtime.snapshots.SnapshotStateMap
-import androidx.compose.ui.graphics.Color
+import androidx.activity.compose.BackHandler
+import androidx.compose.ui.Alignment
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -100,6 +99,17 @@ fun FruitTheme(content: @Composable () -> Unit) {
 data class BloqueData(
     val bloque: String,
     val grupoForza: String
+)
+
+@Composable
+fun blackTextFieldColors() = OutlinedTextFieldDefaults.colors(
+    focusedTextColor = Color.Black,
+    unfocusedTextColor = Color.Black,
+    focusedBorderColor = PrimaryEarth,
+    unfocusedBorderColor = PrimaryEarth.copy(alpha = 0.5f),
+    focusedLabelColor = PrimaryEarth,
+    unfocusedLabelColor = PrimaryEarth,
+    cursorColor = PrimaryEarth
 )
 
 data class EstimationRecord(
@@ -229,7 +239,7 @@ fun jsonToMap(json: JSONObject?): Map<String, Int> {
 // Custom saver for SnapshotStateMap to survive rotation
 val MapSaver = Saver<SnapshotStateMap<String, Int>, Map<String, Int>>(
     save = { it.toMap() },
-    restore = { mutableStateMapOf<String, Int>().apply { putAll(it) } }
+    restore = { it?.let { data -> mutableStateMapOf<String, Int>().apply { putAll(data) } } }
 )
 
 fun readCsvData(context: Context): List<BloqueData> {
@@ -547,23 +557,23 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     }
 
     // Counters - use rememberSaveable so they persist on rotation!
-    var c5 by rememberSaveable { mutableIntStateOf(0) }
-    var c6 by rememberSaveable { mutableIntStateOf(0) }
-    var c7 by rememberSaveable { mutableIntStateOf(0) }
-    var c8 by rememberSaveable { mutableIntStateOf(0) }
-    var c9 by rememberSaveable { mutableIntStateOf(0) }
-    var c10 by rememberSaveable { mutableIntStateOf(0) }
-    var c8p by rememberSaveable { mutableIntStateOf(0) }
-    var guapita by rememberSaveable { mutableIntStateOf(0) }
-    var babyGuapa by rememberSaveable { mutableIntStateOf(0) }
+    var c5 by rememberSaveable { mutableStateOf(0) }
+    var c6 by rememberSaveable { mutableStateOf(0) }
+    var c7 by rememberSaveable { mutableStateOf(0) }
+    var c8 by rememberSaveable { mutableStateOf(0) }
+    var c9 by rememberSaveable { mutableStateOf(0) }
+    var c10 by rememberSaveable { mutableStateOf(0) }
+    var c8p by rememberSaveable { mutableStateOf(0) }
+    var guapita by rememberSaveable { mutableStateOf(0) }
+    var babyGuapa by rememberSaveable { mutableStateOf(0) }
     
     // Non-recovered fruit counters
-    var ausente by rememberSaveable { mutableIntStateOf(0) }
-    var dano by rememberSaveable { mutableIntStateOf(0) }
-    var sinInducir by rememberSaveable { mutableIntStateOf(0) }
-    var bajoPeso by rememberSaveable { mutableIntStateOf(0) }
-    var muestreo by rememberSaveable { mutableIntStateOf(0) }
-    var frutaJoven by rememberSaveable { mutableIntStateOf(0) }
+    var ausente by rememberSaveable { mutableStateOf(0) }
+    var dano by rememberSaveable { mutableStateOf(0) }
+    var sinInducir by rememberSaveable { mutableStateOf(0) }
+    var bajoPeso by rememberSaveable { mutableStateOf(0) }
+    var muestreo by rememberSaveable { mutableStateOf(0) }
+    var frutaJoven by rememberSaveable { mutableStateOf(0) }
 
     // Multi-level counters for Non-Recovered by Calibre
     val nonRecoveredByCalibre = rememberSaveable(saver = MapSaver) { mutableStateMapOf<String, Int>() }
@@ -691,7 +701,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     
                     ExposedDropdownMenuBox(
                         expanded = expandedGrupo,
-                        onExpandedChange = { expandedGrupo = !expandedGrupo },
+                        onExpandedChange = { expandedGrupo = it },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         OutlinedTextField(
@@ -733,7 +743,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
 
                     ExposedDropdownMenuBox(
                         expanded = expandedBloque,
-                        onExpandedChange = { expandedBloque = !expandedBloque },
+                        onExpandedChange = { expandedBloque = it },
                         modifier = Modifier.fillMaxWidth()
                     ) {
                         OutlinedTextField(
@@ -1239,7 +1249,8 @@ fun HistorialScreen(onBack: () -> Unit) {
                 verticalArrangement = Arrangement.spacedBy(16.dp),
                 contentPadding = PaddingValues(vertical = 16.dp)
             ) {
-                groupedRecords.forEach { (groupKey, groupRecords) ->
+                groupedRecords.keys.forEach { groupKey ->
+                    val groupRecords = groupedRecords[groupKey] ?: emptyList()
                     item {
                         Surface(
                             color = SecondaryGold.copy(alpha = 0.8f),
