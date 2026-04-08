@@ -2,13 +2,20 @@ package com.example.aplicativoestimaciones
 
 import java.io.BufferedReader
 import java.io.File
-import java.io.FileReader
+import java.io.FileOutputStream
+import java.io.InputStream
 import java.io.IOException
 import java.text.SimpleDateFormat
 import java.util.Calendar
 import java.util.Date
 import java.util.Locale
+import android.content.Context
+import android.net.Uri
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.ui.focus.*
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
@@ -50,30 +57,32 @@ data class BloqueData(
     val grupoForza: String
 )
 
-fun readCsvData(filePath: String): List<BloqueData> {
+fun readCsvData(context: Context): List<BloqueData> {
     val list = mutableListOf<BloqueData>()
-    val file = File(filePath)
+    val fileName = "grupo_forza.csv"
+    val internalFile = File(context.filesDir, fileName)
     
-    // Fallback data for easy verification
+    // Fallback data for extreme cases
     val fallback = listOf(
         BloqueData("BLOQUE_PRUEBA_1", "GRUPO_PRUEBA_A"),
         BloqueData("BLOQUE_PRUEBA_2", "GRUPO_PRUEBA_A"),
         BloqueData("BLOQUE_PRUEBA_10", "GRUPO_PRUEBA_B")
     )
     
-    if (!file.exists()) return fallback
-    
     try {
-        // Use specifically UTF-8 and handle potential BOM
-        file.bufferedReader(charset = Charsets.UTF_8).use { reader ->
+        val inputStream: InputStream = if (internalFile.exists()) {
+            internalFile.inputStream()
+        } else {
+            context.assets.open(fileName)
+        }
+
+        inputStream.bufferedReader(charset = Charsets.UTF_8).use { reader ->
             reader.forEachLine { rawLine ->
                 val line = rawLine.replace("\uFEFF", "").trim()
                 if (line.isEmpty()) return@forEachLine
                 
-                // Skip common headers
                 if (line.startsWith("Bloque", ignoreCase = true) || line.startsWith("GF", ignoreCase = true)) return@forEachLine
                 
-                // Try splitting by semicolon first (common in Spanish Excel), then comma, then tab
                 val delimiters = listOf(";", ",", "\t")
                 var tokens = emptyList<String>()
                 for (delim in delimiters) {
@@ -128,22 +137,43 @@ fun MainApp() {
 
 @Composable
 fun HomeScreen(onNavigateToIngresar: () -> Unit) {
-    Scaffold(
+    val context = LocalContext.current
+    
+    // File picker launcher
+    val pickerLauncher = rememberLauncherForActivityResult(
+        contract = ActivityResultContracts.GetContent()
+    ) { uri: Uri? ->
+        uri?.let {
+            try {
+                context.contentResolver.openInputStream(it)?.use { input ->
+                    val outputFile = File(context.filesDir, "grupo_forza.csv")
+                    FileOutputStream(outputFile).use { output ->
+                        input.copyTo(output)
+                    }
+                }
+                Toast.makeText(context, "Bloques actualizados correctamente", Toast.LENGTH_SHORT).show()
+            } catch (e: Exception) {
+                Toast.makeText(context, "Error al actualizar bloques", Toast.LENGTH_SHORT).show()
+                e.printStackTrace()
+            }
+        }
+    }
+
+    Surface(
         modifier = Modifier.fillMaxSize(),
-        containerColor = MaterialTheme.colorScheme.background
-    ) { paddingValues ->
+        color = MaterialTheme.colorScheme.background
+    ) {
         Column(
             modifier = Modifier
-                .padding(paddingValues)
                 .fillMaxSize()
                 .padding(24.dp),
-            verticalArrangement = Arrangement.spacedBy(20.dp, Alignment.CenterVertically),
-            horizontalAlignment = Alignment.CenterHorizontally
+            horizontalAlignment = Alignment.CenterHorizontally,
+            verticalArrangement = Arrangement.Center
         ) {
             Text(
-                "Gestor de Fruta", 
-                style = MaterialTheme.typography.headlineLarge, 
-                fontWeight = FontWeight.Bold, 
+                text = "Estimación Fruta",
+                style = MaterialTheme.typography.headlineLarge,
+                fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.primary,
                 textAlign = TextAlign.Center
             )
@@ -151,7 +181,9 @@ fun HomeScreen(onNavigateToIngresar: () -> Unit) {
             
             HomeButton("Ingresar Datos", Icons.Default.Edit) { onNavigateToIngresar() }
             HomeButton("Subir Datos", Icons.Default.Share) { /* TODO */ }
-            HomeButton("Actualizar Bloques", Icons.Default.Refresh) { /* TODO */ }
+            HomeButton("Actualizar Bloques", Icons.Default.Refresh) { 
+                pickerLauncher.launch("text/*") 
+            }
             HomeButton("Guardar Datos en Memoria", Icons.Default.Check) { /* TODO */ }
         }
     }
@@ -180,11 +212,12 @@ fun HomeButton(text: String, icon: ImageVector, onClick: () -> Unit) {
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun IngresarDatosScreen(onBack: () -> Unit) {
+    val context = LocalContext.current
     val focusManager = LocalFocusManager.current
     
-    // CSV Data
+    // CSV Data (reloads when entering screen)
     val csvData = remember { 
-        readCsvData("C:\\Users\\sotoc\\Downloads\\grupo_forza.csv")
+        readCsvData(context)
     }
     
     // Current Time and Week Logic
