@@ -114,6 +114,9 @@ fun HomeButton(text: String, icon: ImageVector, onClick: () -> Unit) {
 fun IngresarDatosScreen(onBack: () -> Unit) {
     var semana by remember { mutableStateOf("") }
     var grupoForza by remember { mutableStateOf("") }
+    var lote by remember { mutableStateOf("") }
+    var bloque by remember { mutableStateOf("") }
+    var desarrollo by remember { mutableStateOf("PC") } // Default value
     
     // Counters
     var c5 by remember { mutableIntStateOf(0) }
@@ -216,6 +219,57 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp)
                     )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = lote,
+                        onValueChange = { input ->
+                            if (input.isEmpty()) {
+                                lote = ""
+                            } else {
+                                val num = input.toIntOrNull()
+                                if (num != null && num in 1..87) {
+                                    lote = input
+                                }
+                            }
+                        },
+                        label = { Text("Lote (1-87)") },
+                        modifier = Modifier.fillMaxWidth(),
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = bloque,
+                        onValueChange = { bloque = it },
+                        label = { Text("Número del Bloque") },
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    Text("Desarrollo", style = MaterialTheme.typography.labelLarge, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    SingleChoiceSegmentedButtonRow(
+                        modifier = Modifier.fillMaxWidth()
+                    ) {
+                        SegmentedButton(
+                            selected = desarrollo == "PC",
+                            onClick = { desarrollo = "PC" },
+                            shape = SegmentedButtonDefaults.itemShape(index = 0, count = 2)
+                        ) {
+                            Text("PC")
+                        }
+                        SegmentedButton(
+                            selected = desarrollo == "SC",
+                            onClick = { desarrollo = "SC" },
+                            shape = SegmentedButtonDefaults.itemShape(index = 1, count = 2)
+                        ) {
+                            Text("SC")
+                        }
+                    }
                 }
             }
 
