@@ -144,6 +144,41 @@ fun saveEstimation(context: Context, record: EstimationRecord) {
     } catch (e: Exception) { e.printStackTrace() }
 }
 
+fun deleteEstimation(context: Context, id: String) {
+    val list = getHistorial(context).filterNot { it.id == id }
+    persistFullList(context, list)
+}
+
+fun clearAllHistorial(context: Context) {
+    persistFullList(context, emptyList())
+}
+
+private fun persistFullList(context: Context, list: List<EstimationRecord>) {
+    val file = File(context.filesDir, "historial.json")
+    val jsonArray = JSONArray()
+    list.forEach { r ->
+        val obj = JSONObject().apply {
+            put("id", r.id)
+            put("date", r.date)
+            put("week", r.week)
+            put("grupoForza", r.grupoForza)
+            put("bloque", r.bloque)
+            put("calidad", r.calidadTotal)
+            put("noRecTotal", r.noRecuperadaTotal)
+            put("noRecCalTotal", r.noRecuperadaCalibreTotal)
+            put("fueraEspec", r.fueraEspecTotal)
+            put("calidadCounts", JSONObject(r.calidadCounts))
+            put("noRecCounts", JSONObject(r.noRecuperadaCounts))
+            put("noRecCalCounts", JSONObject(r.noRecCalibreCounts))
+            put("fueraEspecCounts", JSONObject(r.fueraEspecCounts))
+        }
+        jsonArray.put(obj)
+    }
+    try {
+        FileOutputStream(file).use { it.write(jsonArray.toString().toByteArray()) }
+    } catch (e: Exception) { e.printStackTrace() }
+}
+
 fun getHistorial(context: Context): List<EstimationRecord> {
     val file = File(context.filesDir, "historial.json")
     if (!file.exists()) return emptyList()
@@ -354,7 +389,9 @@ fun HomeScreen(onNavigateToIngresar: () -> Unit, onNavigateToHistorial: () -> Un
             HomeButton("Actualizar Bloques", Icons.Default.Refresh) { 
                 pickerLauncher.launch("text/*") 
             }
-            HomeButton("Guardar Datos en Memoria", Icons.Default.Check) { /* TODO */ }
+            HomeButton("Descargar Excel", Icons.Default.Check) { 
+                exportRecordsToCSV(context, getHistorial(context))
+            }
         }
     }
 }
@@ -1020,8 +1057,51 @@ fun DefectCategorySection(
 @Composable
 fun HistorialScreen(onBack: () -> Unit) {
     val context = LocalContext.current
-    val records = remember { getHistorial(context) }
+    var records by remember { mutableStateOf(getHistorial(context)) }
+    
+    // Deletion states
+    var showDeleteAllDialog by remember { mutableStateOf(false) }
+    var itemToDelete by remember { mutableStateOf<EstimationRecord?>(null) }
+    
     val groupedRecords = records.groupBy { "${it.grupoForza} - ${it.bloque}" }
+
+    // Dialog: Delete Single
+    if (itemToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { itemToDelete = null },
+            title = { Text("¿Borrar registro?") },
+            text = { Text("¿Estás seguro de que deseas borrar esta estimación?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    itemToDelete?.let { deleteEstimation(context, it.id) }
+                    records = getHistorial(context)
+                    itemToDelete = null
+                }) { Text("Eliminar", color = Color.Red) }
+            },
+            dismissButton = {
+                TextButton(onClick = { itemToDelete = null }) { Text("Cancelar") }
+            }
+        )
+    }
+
+    // Dialog: Delete All
+    if (showDeleteAllDialog) {
+        AlertDialog(
+            onDismissRequest = { showDeleteAllDialog = false },
+            title = { Text("Borrar TODO el historial") },
+            text = { Text("Esta acción eliminará todos los registros guardados. ¿Estás seguro?") },
+            confirmButton = {
+                TextButton(onClick = {
+                    clearAllHistorial(context)
+                    records = getHistorial(context)
+                    showDeleteAllDialog = false
+                }) { Text("Eliminar Todo", color = Color.Red) }
+            },
+            dismissButton = {
+                TextButton(onClick = { showDeleteAllDialog = false }) { Text("Cancelar") }
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -1035,6 +1115,11 @@ fun HistorialScreen(onBack: () -> Unit) {
                 actions = {
                     IconButton(onClick = { exportRecordsToCSV(context, records) }) {
                         Icon(Icons.Default.Share, contentDescription = "Descargar CSV")
+                    }
+                    if (records.isNotEmpty()) {
+                        IconButton(onClick = { showDeleteAllDialog = true }) {
+                            Icon(Icons.Default.Remove, contentDescription = "Borrar Todo", tint = Color.Red)
+                        }
                     }
                 },
                 colors = TopAppBarDefaults.topAppBarColors(
@@ -1085,8 +1170,13 @@ fun HistorialScreen(onBack: () -> Unit) {
                         ) {
                             Column(Modifier.padding(16.dp)) {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-                                    Text(record.date, style = MaterialTheme.typography.labelSmall, color = PrimaryEarth)
-                                    Text("Semana ${record.week}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color.Black)
+                                    Column {
+                                        Text(record.date, style = MaterialTheme.typography.labelSmall, color = PrimaryEarth)
+                                        Text("Semana ${record.week}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color.Black)
+                                    }
+                                    IconButton(onClick = { itemToDelete = record }) {
+                                        Icon(Icons.Default.Remove, contentDescription = "Eliminar", tint = Color.Red.copy(alpha = 0.7f))
+                                    }
                                 }
                                 Spacer(Modifier.height(12.dp))
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
