@@ -487,7 +487,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                         Text("$totalGeneral", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = MaterialTheme.colorScheme.primary)
                     }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBy(16.dp)) {
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
                         Column {
                             Text("Calidad: $calidadTotal", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
                             Text("No Rec.: $noRecTotal", style = MaterialTheme.typography.bodyMedium)
@@ -889,12 +889,12 @@ fun FueraEspecificacionCalibreRow(
         ) {
             Column(modifier = Modifier.weight(1f)) {
                 if (isDouble) Text("Tolerable", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                ElegantCounter(label = "", value = val1, onValueChange = onVal1Change)
+                CounterRow(label = "", value = val1, onValueChange = onVal1Change)
             }
             if (isDouble) {
                 Column(modifier = Modifier.weight(1f)) {
                     Text("No Tolerable", style = MaterialTheme.typography.labelSmall, color = MaterialTheme.colorScheme.secondary)
-                    ElegantCounter(label = "", value = val2, onValueChange = onVal2Change)
+                    CounterRow(label = "", value = val2, onValueChange = onVal2Change)
                 }
             }
         }
@@ -1052,29 +1052,6 @@ fun SummaryMiniItem(label: String, value: Int) {
     }
 }
 
-@Composable
-fun SummaryLabel(label: String, value: Int) {
-    Row(verticalAlignment = Alignment.CenterVertically) {
-        Text("$label: ", style = MaterialTheme.typography.bodyMedium, color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f))
-        Text("$value", style = MaterialTheme.typography.bodyLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-    }
-}
-
-@Composable
-fun CounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
-    Row(verticalAlignment = Alignment.CenterVertically, horizontalArrangement = Arrangement.SpaceBetween, modifier = Modifier.fillMaxWidth()) {
-        if (label.isNotEmpty()) Text(label, style = MaterialTheme.typography.bodyMedium)
-        Row(verticalAlignment = Alignment.CenterVertically) {
-            IconButton(onClick = { if (value > 0) onValueChange(value - 1) }) {
-                Icon(Icons.Default.Remove, contentDescription = "Decrementar")
-            }
-            Text(value.toString(), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, modifier = Modifier.padding(horizontal = 8.dp))
-            IconButton(onClick = { onValueChange(value + 1) }) {
-                Icon(Icons.Default.Add, contentDescription = "Incrementar")
-            }
-        }
-    }
-}
 
 @Preview(showBackground = true)
 @Composable
