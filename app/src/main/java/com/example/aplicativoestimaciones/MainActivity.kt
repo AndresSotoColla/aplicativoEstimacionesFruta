@@ -12,6 +12,8 @@ import java.util.Locale
 import android.content.ContentValues
 import android.content.Context
 import android.net.Uri
+import android.os.Build
+import android.os.Bundle
 import android.provider.MediaStore
 import android.widget.Toast
 import androidx.activity.ComponentActivity
@@ -19,6 +21,7 @@ import androidx.activity.compose.setContent
 import androidx.activity.enableEdgeToEdge
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.RequiresApi
 import androidx.compose.ui.focus.*
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalFocusManager
@@ -272,6 +275,7 @@ fun readCsvData(context: Context): List<BloqueData> {
     return if (list.isEmpty()) fallback else list
 }
 
+@RequiresApi(Build.VERSION_CODES.Q)
 fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
     if (records.isEmpty()) {
         Toast.makeText(context, "No hay datos para exportar", Toast.LENGTH_SHORT).show()
@@ -401,6 +405,7 @@ fun MainApp() {
     }
 }
 
+@RequiresApi(Build.VERSION_CODES.Q)
 @Composable
 fun HomeScreen(onNavigateToIngresar: () -> Unit, onNavigateToHistorial: () -> Unit) {
     val context = LocalContext.current
@@ -434,7 +439,7 @@ fun HomeScreen(onNavigateToIngresar: () -> Unit, onNavigateToHistorial: () -> Un
                 .fillMaxSize()
                 .padding(24.dp),
             horizontalAlignment = Alignment.CenterHorizontally,
-            verticalArrangement = Arrangement.spacedBy(32.dp, Alignment.CenterVertically)
+            verticalArrangement = Arrangement.spacedBy(12.dp, Alignment.CenterVertically)
         ) {
             Text(
                 text = "Estimación Fruta",
@@ -464,17 +469,28 @@ fun HomeButton(text: String, icon: ImageVector, onClick: () -> Unit) {
         onClick = onClick,
         modifier = Modifier
             .fillMaxWidth()
-            .height(72.dp),
-        shape = RoundedCornerShape(20.dp),
+            .height(56.dp), // 🔥 antes 72 → ahora estándar
+        shape = RoundedCornerShape(14.dp), // 🔽 menos “inflado”
         colors = ButtonDefaults.buttonColors(
             containerColor = PrimaryEarth,
             contentColor = Color.White
         ),
-        elevation = ButtonDefaults.buttonElevation(defaultElevation = 4.dp)
+        elevation = ButtonDefaults.buttonElevation(defaultElevation = 3.dp)
     ) {
-        Icon(imageVector = icon, contentDescription = null, modifier = Modifier.size(28.dp))
-        Spacer(modifier = Modifier.width(16.dp))
-        Text(text, fontSize = 20.sp, fontWeight = FontWeight.SemiBold, color = Color.White)
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            modifier = Modifier.size(22.dp) // 🔽 más proporcional
+        )
+
+        Spacer(modifier = Modifier.width(6.dp)) // 🔽 menos espacio
+
+        Text(
+            text,
+            fontSize = 16.sp, // 🔽 más compacto
+            fontWeight = FontWeight.Medium,
+            color = Color.White
+        )
     }
 }
 
