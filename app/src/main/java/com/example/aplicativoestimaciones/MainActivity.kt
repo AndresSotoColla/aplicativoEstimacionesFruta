@@ -68,6 +68,7 @@ val CALIBRES = listOf("C5", "C6", "C7", "C8", "C9", "C10", "C8P", "Guapita", "Ba
 val DEFECTOS = listOf("Enferma", "Quema Sol Severo", "Deforme", "Daño Insecto", "Daño Mecánico")
 val FUERA_ESPEC_CATS = listOf("Cuello", "Cónica", "Cicatriz", "Base café", "Cónica Inclinada", "Corona Pequeña", "Corona Grande", "Corona Múltiple", "Cochinilla", "Off Color", "Quema Sol Leve")
 val FUERA_ESPEC_SINGLE = "Deforme"
+val FUERA_ESPEC_ADELANTADA = "Fruta Adelantada"
 val ESPEC_TYPES = listOf("Tolerable", "No Tolerable")
 
 // --- ELEGANT COLOR PALETTE ---
@@ -328,6 +329,10 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
     CALIBRES.forEach { calibre ->
         sb.append(",FE_${FUERA_ESPEC_SINGLE}_$calibre")
     }
+    // Single category: Fruta Adelantada
+    CALIBRES.forEach { calibre ->
+        sb.append(",FE_${FUERA_ESPEC_ADELANTADA.replace(" ", "_")}_$calibre")
+    }
     // Dual categories
     FUERA_ESPEC_CATS.forEach { cat ->
         CALIBRES.forEach { calibre ->
@@ -360,6 +365,10 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
         // Deforme
         CALIBRES.forEach { calibre ->
             sb.append(",${r.fueraEspecCounts["${FUERA_ESPEC_SINGLE}_$calibre"] ?: 0}")
+        }
+        // Fruta Adelantada
+        CALIBRES.forEach { calibre ->
+            sb.append(",${r.fueraEspecCounts["${FUERA_ESPEC_ADELANTADA}_$calibre"] ?: 0}")
         }
         // Dual categories
         FUERA_ESPEC_CATS.forEach { cat ->
@@ -532,10 +541,11 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     
     // Current Time and Week Logic
     val calendar = Calendar.getInstance()
-    val currentWeek = calendar.get(Calendar.WEEK_OF_YEAR).toString()
-    val currentTime = rememberSaveable { SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date()) }
+    val initialWeek = calendar.get(Calendar.WEEK_OF_YEAR).toString()
+    val initialTime = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(Date())
 
-    var semana by rememberSaveable { mutableStateOf(currentWeek) }
+    var semana by rememberSaveable { mutableStateOf(initialWeek) }
+    var currentTime by rememberSaveable { mutableStateOf(initialTime) }
     var grupoForza by rememberSaveable { mutableStateOf("") }
     var bloque by rememberSaveable { mutableStateOf("") }
     
@@ -605,6 +615,9 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
             }
             CALIBRES.forEach { calibre ->
                 fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] = 0
+            }
+            CALIBRES.forEach { calibre ->
+                fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = 0
             }
         }
     }
@@ -893,6 +906,15 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                         }
                     )
                     
+                    FueraEspecificacionDeepCategorySection(
+                        category = FUERA_ESPEC_ADELANTADA,
+                        isDouble = false,
+                        counters = fueraEspecificacionCounters,
+                        onValueChange = { key, newValue ->
+                            fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${key}"] = newValue
+                        }
+                    )
+                    
                     HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 1.dp)
 
                     FUERA_ESPEC_CATS.forEach { cat ->
@@ -934,7 +956,42 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     )
                     saveEstimation(context, r)
                     Toast.makeText(context, "Datos guardados correctamente", Toast.LENGTH_SHORT).show()
-                    onBack()
+                    
+                    // --- RESET ALL STATES FOR NEW ENTRY ---
+                    val newCal = Calendar.getInstance()
+                    currentTime = SimpleDateFormat("dd/MM/yyyy HH:mm", Locale.getDefault()).format(newCal.time)
+                    semana = newCal.get(Calendar.WEEK_OF_YEAR).toString()
+                    grupoForza = ""
+                    bloque = ""
+                    
+                    // Reset counters
+                    c5 = 0; c6 = 0; c7 = 0; c8 = 0; c9 = 0; c10 = 0; c8p = 0; guapita = 0; babyGuapa = 0
+                    ausente = 0; dano = 0; sinInducir = 0; bajoPeso = 0; muestreo = 0; frutaJoven = 0
+                    
+                    // Clear and re-initialize maps
+                    nonRecoveredByCalibre.clear()
+                    DEFECTOS.forEach { defect ->
+                        CALIBRES.forEach { calibre ->
+                            nonRecoveredByCalibre["${defect}_${calibre}"] = 0
+                        }
+                    }
+                    
+                    fueraEspecificacionCounters.clear()
+                    FUERA_ESPEC_CATS.forEach { cat ->
+                        CALIBRES.forEach { calibre ->
+                            ESPEC_TYPES.forEach { type ->
+                                fueraEspecificacionCounters["${cat}_${calibre}_${type}"] = 0
+                            }
+                        }
+                    }
+                    CALIBRES.forEach { calibre ->
+                        fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] = 0
+                    }
+                    CALIBRES.forEach { calibre ->
+                        fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = 0
+                    }
+                    
+                    Toast.makeText(context, "Formulario listo para nuevo bloque", Toast.LENGTH_SHORT).show()
                 },
                 modifier = Modifier.fillMaxWidth().height(56.dp),
                 shape = RoundedCornerShape(12.dp),
