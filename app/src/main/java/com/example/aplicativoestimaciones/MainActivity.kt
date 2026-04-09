@@ -64,7 +64,7 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aplicativoestimaciones.ui.theme.AplicativoEstimacionesTheme
 
-val CALIBRES = listOf("C5", "C6", "C7", "C8", "C9", "C10", "C8P", "Guapita", "Baby Guapa")
+val CALIBRES = listOf("C5", "C6", "C7", "C8", "C9", "C10", "Guapita", "Baby Guapa")
 val DEFECTOS = listOf("Enferma", "Quema Sol Severo", "Deforme", "Daño Insecto", "Daño Mecánico")
 val FUERA_ESPEC_CATS = listOf("Cuello", "Cónica", "Cicatriz", "Base café", "Cónica Inclinada", "Corona Pequeña", "Corona Grande", "Corona Múltiple", "Cochinilla", "Off Color", "Quema Sol Leve")
 val FUERA_ESPEC_SINGLE = "Deforme"
@@ -576,7 +576,6 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     var c8 by rememberSaveable { mutableStateOf(0) }
     var c9 by rememberSaveable { mutableStateOf(0) }
     var c10 by rememberSaveable { mutableStateOf(0) }
-    var c8p by rememberSaveable { mutableStateOf(0) }
     var guapita by rememberSaveable { mutableStateOf(0) }
     var babyGuapa by rememberSaveable { mutableStateOf(0) }
     
@@ -623,7 +622,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     }
 
     // REAL-TIME TOTALS
-    val calidadTotal by remember { derivedStateOf { c5 + c6 + c7 + c8 + c9 + c10 + c8p + guapita + babyGuapa } }
+    val calidadTotal by remember { derivedStateOf { c5 + c6 + c7 + c8 + c9 + c10 + guapita + babyGuapa } }
     val noRecTotal by remember { derivedStateOf { ausente + dano + sinInducir + bajoPeso + muestreo + frutaJoven } }
     val noRecCalTotal by remember { derivedStateOf { nonRecoveredByCalibre.values.sum() } }
     val fueraEspecTotal by remember { derivedStateOf { fueraEspecificacionCounters.values.sum() } }
@@ -827,8 +826,6 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                     CounterRow("C10", c10) { c10 = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("C8P", c8p) { c8p = it }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                     CounterRow("Guapita", guapita) { guapita = it }
                     HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
                     CounterRow("Baby Guapa", babyGuapa) { babyGuapa = it }
@@ -945,7 +942,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                         fueraEspecTotal = fueraEspecTotal,
                         calidadCounts = mapOf(
                             "C5" to c5, "C6" to c6, "C7" to c7, "C8" to c8, "C9" to c9,
-                            "C10" to c10, "C8P" to c8p, "Guapita" to guapita, "Baby Guapa" to babyGuapa
+                            "C10" to c10, "Guapita" to guapita, "Baby Guapa" to babyGuapa
                         ),
                         noRecuperadaCounts = mapOf(
                             "Ausente" to ausente, "Daño" to dano, "Sin Inducir" to sinInducir,
@@ -965,7 +962,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     bloque = ""
                     
                     // Reset counters
-                    c5 = 0; c6 = 0; c7 = 0; c8 = 0; c9 = 0; c10 = 0; c8p = 0; guapita = 0; babyGuapa = 0
+                    c5 = 0; c6 = 0; c7 = 0; c8 = 0; c9 = 0; c10 = 0; guapita = 0; babyGuapa = 0
                     ausente = 0; dano = 0; sinInducir = 0; bajoPeso = 0; muestreo = 0; frutaJoven = 0
                     
                     // Clear and re-initialize maps
