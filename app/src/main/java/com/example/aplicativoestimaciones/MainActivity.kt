@@ -130,7 +130,8 @@ data class EstimationRecord(
     val calidadCounts: Map<String, Int> = emptyMap(),
     val noRecuperadaCounts: Map<String, Int> = emptyMap(),
     val noRecCalibreCounts: Map<String, Int> = emptyMap(),
-    val fueraEspecCounts: Map<String, Int> = emptyMap()
+    val fueraEspecCounts: Map<String, Int> = emptyMap(),
+    val isUploaded: Boolean = false
 )
 
 fun saveEstimation(context: Context, record: EstimationRecord) {
@@ -155,6 +156,7 @@ fun saveEstimation(context: Context, record: EstimationRecord) {
             put("noRecCounts", JSONObject(r.noRecuperadaCounts))
             put("noRecCalCounts", JSONObject(r.noRecCalibreCounts))
             put("fueraEspecCounts", JSONObject(r.fueraEspecCounts))
+            put("isUploaded", r.isUploaded)
         }
         jsonArray.put(obj)
     }
@@ -191,12 +193,20 @@ private fun persistFullList(context: Context, list: List<EstimationRecord>) {
             put("noRecCounts", JSONObject(r.noRecuperadaCounts))
             put("noRecCalCounts", JSONObject(r.noRecCalibreCounts))
             put("fueraEspecCounts", JSONObject(r.fueraEspecCounts))
+            put("isUploaded", r.isUploaded)
         }
         jsonArray.put(obj)
     }
     try {
         FileOutputStream(file).use { it.write(jsonArray.toString().toByteArray()) }
     } catch (e: Exception) { e.printStackTrace() }
+}
+
+fun markAsUploaded(context: Context, id: String) {
+    val list = getHistorial(context).map { 
+        if (it.id == id) it.copy(isUploaded = true) else it
+    }
+    persistFullList(context, list)
 }
 
 fun getHistorial(context: Context): List<EstimationRecord> {
@@ -222,7 +232,8 @@ fun getHistorial(context: Context): List<EstimationRecord> {
                 calidadCounts = jsonToMap(obj.optJSONObject("calidadCounts")),
                 noRecuperadaCounts = jsonToMap(obj.optJSONObject("noRecCounts")),
                 noRecCalibreCounts = jsonToMap(obj.optJSONObject("noRecCalCounts")),
-                fueraEspecCounts = jsonToMap(obj.optJSONObject("fueraEspecCounts"))
+                fueraEspecCounts = jsonToMap(obj.optJSONObject("fueraEspecCounts")),
+                isUploaded = obj.optBoolean("isUploaded", false)
             ))
         }
     } catch (e: Exception) { e.printStackTrace() }
@@ -238,6 +249,142 @@ fun jsonToMap(json: JSONObject?): Map<String, Int> {
         map[key] = json.getInt(key)
     }
     return map
+}
+
+// --- API MAPS & UPLOAD LOGIC ---
+val API_CALIBRE_MAP = mapOf(
+    "BABY GUAPA" to 1, "GUAPITA" to 2, "C10" to 3, "C9" to 4, "C8" to 5, "C7" to 6, "C6" to 7, "C5" to 8,
+    "SOBRE PESO" to 9, "BAJO PESO" to 10, "SIN CALIBRE" to 11
+)
+
+val API_RAZON_MAP = mapOf(
+    "Ausente" to 1, "Daño" to 2, "Sin inducir" to 3, "Bajo peso" to 4, "Muestreo" to 5, "Fruta joven" to 6,
+    "Enferma" to 7, "Quema sol severo" to 8, "Deforme" to 9, "Daño insecto" to 10, "Daño mecanico" to 11
+)
+
+val API_AFECTACION_MAP = mapOf(
+    "Fruta Adelantada" to 13, "Deforme" to 1, "Cuello" to 2, "Cónica" to 3, "Cicatriz" to 4, "Base café" to 5,
+    "Cónica Inclinada" to 6, "Corona Pequeña" to 7, "Corona Grande" to 8, "Corona Múltiple" to 9, "Cochinilla" to 10,
+    "Off Color" to 11, "Quema Sol Leve" to 12
+)
+
+fun isNetworkAvailable(context: Context): Boolean {
+    val connectivityManager = context.getSystemService(Context.CONNECTIVITY_SERVICE) as android.net.ConnectivityManager
+    val network = connectivityManager.activeNetwork ?: return false
+    val capabilities = connectivityManager.getNetworkCapabilities(network) ?: return false
+    return capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
+}
+
+fun uploadRecord(context: Context, record: EstimationRecord, onResult: (Boolean, String) -> Unit) {
+    if (!isNetworkAvailable(context)) {
+        onResult(false, "No hay internet. Conéctate para subir datos.")
+        return
+    }
+
+    val thread = Thread {
+        try {
+            val url = java.net.URL("https://interno.control.agricolaguapa.com/consultor/api/cargue_estimacion")
+            val conn = url.openConnection() as java.net.HttpURLConnection
+            conn.requestMethod = "POST"
+            conn.setRequestProperty("Content-Type", "application/json; charset=utf-8")
+            conn.doOutput = true
+
+            // Data splitting for API (dd/MM/yyyy HH:mm)
+            val parts = record.date.split(" ")
+            val dateParts = parts[0].split("/")
+            val apiDate = "${dateParts[2]}-${dateParts[1]}-${dateParts[0]}" // YYYY-MM-DD
+            val apiTime = if (parts.size > 1) "${parts[1]}:00" else "00:00:00"
+
+            val jsonOutput = JSONObject().apply {
+                put("bloque", record.bloque)
+                put("grupo_forza", record.grupoForza.filter { it.isDigit() }.let { if (it.isEmpty()) 0 else it.toInt() })
+                put("fecha", apiDate)
+                put("hora", apiTime)
+                put("semana", record.week.toIntOrNull() ?: 0)
+
+                // 1. Calidad
+                val calidadArray = JSONArray()
+                record.calidadCounts.forEach { (name, count) ->
+                    if (count > 0) {
+                        val id = API_CALIBRE_MAP[name.uppercase()] ?: 11
+                        calidadArray.put(JSONObject().apply {
+                            put("id_calibre", id)
+                            put("conteo", count)
+                        })
+                    }
+                }
+                put("calidad", calidadArray)
+
+                // 2. No Recuperada
+                val noRecArray = JSONArray()
+                // Simple cats (id_calibre = 11 for Sin Calibre)
+                record.noRecuperadaCounts.forEach { (name, count) ->
+                    if (count > 0) {
+                        val idRazon = API_RAZON_MAP[name] ?: 11
+                        noRecArray.put(JSONObject().apply {
+                            put("id_razon", idRazon)
+                            put("id_calibre", 11)
+                            put("conteo", count)
+                        })
+                    }
+                }
+                // Matrix cats (NRC_Reason_Calibre)
+                record.noRecCalibreCounts.forEach { (key, count) ->
+                    if (count > 0) {
+                        val parts = key.split("_")
+                        if (parts.size >= 2) {
+                            val idRazon = API_RAZON_MAP[parts[0]] ?: 11
+                            val idCal = API_CALIBRE_MAP[parts[1].uppercase()] ?: 11
+                            noRecArray.put(JSONObject().apply {
+                                put("id_razon", idRazon)
+                                put("id_calibre", idCal)
+                                put("conteo", count)
+                            })
+                        }
+                    }
+                }
+                put("no_recuperada", noRecArray)
+
+                // 3. Fuera Especificación
+                val feArray = JSONArray()
+                record.fueraEspecCounts.forEach { (key, count) ->
+                    if (count > 0) {
+                        val parts = key.split("_")
+                        if (parts.size >= 2) {
+                            val idAfe = API_AFECTACION_MAP[parts[0]] ?: 0
+                            if (idAfe > 0) {
+                                val idCal = API_CALIBRE_MAP[parts[1].uppercase()] ?: 11
+                                // Tolerance: 1 Tolerable, 2 No Tolerable, 3 Sin Tolerancia
+                                val idTol = when {
+                                    parts.size >= 3 -> if (parts[2] == "Tolerable") 1 else 2
+                                    else -> 3
+                                }
+                                feArray.put(JSONObject().apply {
+                                    put("id_afectacion", idAfe)
+                                    put("id_calibre", idCal)
+                                    put("id_tolerancia", idTol)
+                                    put("conteo", count)
+                                })
+                            }
+                        }
+                    }
+                }
+                put("fuera_especificacion", feArray)
+            }
+
+            conn.outputStream.use { it.write(jsonOutput.toString().toByteArray(StandardCharsets.UTF_8)) }
+
+            val responseCode = conn.responseCode
+            if (responseCode in 200..299) {
+                onResult(true, "Subida exitosa")
+            } else {
+                onResult(false, "Error servidor ($responseCode)")
+            }
+        } catch (e: Exception) {
+            onResult(false, "Error: ${e.message}")
+        }
+    }
+    thread.start()
 }
 
 // Custom saver for SnapshotStateMap to survive rotation
@@ -1224,6 +1371,7 @@ fun HistorialScreen(onBack: () -> Unit) {
     var showDeleteAllDialog by remember { mutableStateOf(false) }
     var itemToDelete by remember { mutableStateOf<EstimationRecord?>(null) }
     
+    val scope = rememberCoroutineScope()
     val groupedRecords = records.groupBy { "${it.grupoForza} - ${it.bloque}" }
 
     // Dialog: Delete Single
@@ -1274,6 +1422,32 @@ fun HistorialScreen(onBack: () -> Unit) {
                     }
                 },
                 actions = {
+                    val pendingCount = records.count { !it.isUploaded }
+                    if (pendingCount > 0) {
+                        IconButton(onClick = {
+                            if (!isNetworkAvailable(context)) {
+                                Toast.makeText(context, "Conéctate a internet para subir datos", Toast.LENGTH_LONG).show()
+                            } else {
+                                Toast.makeText(context, "Subiendo $pendingCount registros...", Toast.LENGTH_SHORT).show()
+                                records.filter { !it.isUploaded }.forEach { rec ->
+                                    uploadRecord(context, rec) { success, msg ->
+                                        if (success) {
+                                            markAsUploaded(context, rec.id)
+                                            // Refresh UI from main thread if needed or just reload records
+                                        }
+                                    }
+                                }
+                                // Poor man's refresh - ideally use a Flow or ViewModel
+                                scope.launch(kotlinx.coroutines.Dispatchers.IO) {
+                                    kotlinx.coroutines.delay(2000)
+                                    records = getHistorial(context)
+                                }
+                            }
+                        }) {
+                            Icon(Icons.Default.Share, contentDescription = "Subir Todo", tint = Color.Cyan)
+                        }
+                    }
+
                     IconButton(onClick = { exportRecordsToCSV(context, records) }) {
                         Icon(Icons.Default.Share, contentDescription = "Descargar CSV")
                     }
@@ -1328,16 +1502,39 @@ fun HistorialScreen(onBack: () -> Unit) {
                             modifier = Modifier.fillMaxWidth(),
                             elevation = CardDefaults.cardElevation(defaultElevation = 2.dp),
                             shape = RoundedCornerShape(16.dp),
-                            colors = CardDefaults.cardColors(containerColor = SurfaceCream)
+                            colors = CardDefaults.cardColors(
+                                containerColor = if (!record.isUploaded) Color(0xFFE8F5E9) else SurfaceCream
+                            )
                         ) {
                             Column(Modifier.padding(16.dp)) {
                                 Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                                     Column {
                                         Text(record.date, style = MaterialTheme.typography.labelSmall, color = PrimaryEarth)
                                         Text("Semana ${record.week}", style = MaterialTheme.typography.labelMedium, fontWeight = FontWeight.Bold, color = Color.Black)
+                                        if (record.isUploaded) {
+                                            Text("SUBIDO", style = MaterialTheme.typography.labelSmall, color = Color.Gray, fontWeight = FontWeight.Bold)
+                                        }
                                     }
-                                    IconButton(onClick = { itemToDelete = record }) {
-                                        Icon(Icons.Default.Remove, contentDescription = "Eliminar", tint = Color.Red.copy(alpha = 0.7f))
+                                    
+                                    Row {
+                                        if (!record.isUploaded) {
+                                            IconButton(onClick = {
+                                                uploadRecord(context, record) { success, msg ->
+                                                    scope.launch(kotlinx.coroutines.Dispatchers.Main) {
+                                                        Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
+                                                        if (success) {
+                                                            markAsUploaded(context, record.id)
+                                                            records = getHistorial(context)
+                                                        }
+                                                    }
+                                                }
+                                            }) {
+                                                Icon(Icons.Default.Share, contentDescription = "Subir", tint = PrimaryEarth)
+                                            }
+                                        }
+                                        IconButton(onClick = { itemToDelete = record }) {
+                                            Icon(Icons.Default.Remove, contentDescription = "Eliminar", tint = Color.Red.copy(alpha = 0.7f))
+                                        }
                                     }
                                 }
                                 Spacer(Modifier.height(12.dp))
