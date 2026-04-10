@@ -1020,7 +1020,6 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                         Column {
                             // Header Row
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.width(100.dp)) // Calibre column spacer
                                 DEFECTOS.forEach { defecto ->
                                     Text(
                                         text = defecto,
@@ -1030,18 +1029,11 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                         textAlign = TextAlign.Center
                                     )
                                 }
-
                             }
                             
                             // Data Rows
                             CALIBRES.forEach { calibre ->
                                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-                                    Text(
-                                        text = calibre,
-                                        modifier = Modifier.width(100.dp),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.Bold
-                                    )
                                     DEFECTOS.forEach { defecto ->
                                         Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
                                             CompactCounterRow(
@@ -1053,6 +1045,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                     }
                                 }
                             }
+
                         }
                     }
                 }
@@ -1075,8 +1068,6 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                         Column {
                             // Header Row (Afectaciones)
                             Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(modifier = Modifier.width(100.dp)) // Calibre column spacer
-                                
                                 // Deforme
                                 Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(140.dp)) {
                                     Text(FUERA_ESPEC_SINGLE, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
@@ -1096,19 +1087,11 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                     }
                                 }
 
-
                             }
                             
                             // Data Rows
                             CALIBRES.forEach { calibre ->
                                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-                                    Text(
-                                        text = calibre,
-                                        modifier = Modifier.width(100.dp),
-                                        style = MaterialTheme.typography.bodySmall,
-                                        fontWeight = FontWeight.Bold
-                                    )
-                                    
                                     // Deforme
                                     Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
                                         CompactCounterRow(label = calibre, 
@@ -1144,6 +1127,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                     }
                                 }
                             }
+
                         }
                     }
                 }
