@@ -799,280 +799,355 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                 .verticalScroll(rememberScrollState())
                 .padding(16.dp)
         ) {
-            // --- SUMMARY CARD ---
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.primaryContainer),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                shape = RoundedCornerShape(20.dp)
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Column(modifier = Modifier.padding(16.dp)) {
+                Column(modifier = Modifier.padding(12.dp)) {
                     Row(
                         modifier = Modifier.fillMaxWidth(),
                         horizontalArrangement = Arrangement.SpaceBetween,
                         verticalAlignment = Alignment.CenterVertically
                     ) {
-                        Text("Total General", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
-                        Text("$totalGeneral", style = MaterialTheme.typography.headlineMedium, fontWeight = FontWeight.ExtraBold, color = Color.White)
+                        Text("Total General", style = MaterialTheme.typography.titleSmall, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.onPrimaryContainer)
+                        Text("$totalGeneral", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.ExtraBold, color = Color.White)
                     }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
-                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(16.dp)) {
+                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.2f))
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Column {
-                            Text("Calidad: $calidadTotal", style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.SemiBold)
-                            Text("No Rec.: $noRecTotal", style = MaterialTheme.typography.bodyMedium)
+                            Text("Calidad: $calidadTotal", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
+                            Text("No Rec.: $noRecTotal", style = MaterialTheme.typography.labelSmall)
                         }
                         Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f)) {
-                            Text("No Rec. Cal: $noRecCalTotal", style = MaterialTheme.typography.bodyMedium)
-                            Text("F. Espec.: $fueraEspecTotal", style = MaterialTheme.typography.bodyMedium)
+                            Text("No Rec. Cal: $noRecCalTotal", style = MaterialTheme.typography.labelSmall)
+                            Text("F. Espec.: $fueraEspecTotal", style = MaterialTheme.typography.labelSmall)
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text("Información General", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.height(20.dp))
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("Información General", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(8.dp))
                     
                     OutlinedTextField(
                         value = currentTime,
                         onValueChange = {},
-                        label = { Text("Fecha de Actividad") },
+                        label = { Text("Fecha", fontSize = 12.sp) },
                         readOnly = true,
                         modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(8.dp),
+                        textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     
                     OutlinedTextField(
                         value = semana,
                         onValueChange = { semana = it },
-                        label = { Text("Semana (Número)") },
+                        label = { Text("Semana", fontSize = 12.sp) },
                         modifier = Modifier.fillMaxWidth(),
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
-                        shape = RoundedCornerShape(12.dp)
+                        shape = RoundedCornerShape(8.dp),
+                        textStyle = LocalTextStyle.current.copy(fontSize = 14.sp)
                     )
-                    Spacer(modifier = Modifier.height(12.dp))
+                    Spacer(modifier = Modifier.height(8.dp))
                     
-                    ExposedDropdownMenuBox(
-                        expanded = expandedGrupo,
-                        onExpandedChange = { expandedGrupo = it },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        OutlinedTextField(
-                            value = grupoForza,
-                            onValueChange = { grupoForza = it },
-                            label = { Text("Grupo Forza") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor()
-                                .onFocusChanged { expandedGrupo = it.isFocused },
-                            shape = RoundedCornerShape(12.dp),
-                            singleLine = true,
-                            colors = blackTextFieldColors(),
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGrupo) }
-                        )
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        ExposedDropdownMenuBox(
+                            expanded = expandedGrupo,
+                            onExpandedChange = { expandedGrupo = it },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            OutlinedTextField(
+                                value = grupoForza,
+                                onValueChange = { grupoForza = it },
+                                label = { Text("GF", fontSize = 12.sp) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor()
+                                    .onFocusChanged { expandedGrupo = it.isFocused },
+                                shape = RoundedCornerShape(8.dp),
+                                singleLine = true,
+                                colors = blackTextFieldColors(),
+                                textStyle = LocalTextStyle.current.copy(fontSize = 14.sp),
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedGrupo) }
+                            )
 
-                        val filteredGrupos = gruposUnicos.filter { it.trim().contains(grupoForza.trim(), ignoreCase = true) }
+                            val filteredGrupos = gruposUnicos.filter { it.trim().contains(grupoForza.trim(), ignoreCase = true) }
 
-                        if (expandedGrupo && filteredGrupos.isNotEmpty()) {
-                            DropdownMenu(
-                                expanded = expandedGrupo,
-                                onDismissRequest = { expandedGrupo = false },
-                                modifier = Modifier.exposedDropdownSize().heightIn(max = 250.dp).background(Color(0xFFEAD7BC))
-                            ) {
-                                filteredGrupos.forEach { gf ->
-                                    DropdownMenuItem(
-                                        text = { Text(gf, color = Color.Black) },
-                                        onClick = {
-                                            grupoForza = gf
-                                            expandedGrupo = false
-                                            focusManager.clearFocus()
-                                        }
-                                    )
+                            if (expandedGrupo && filteredGrupos.isNotEmpty()) {
+                                DropdownMenu(
+                                    expanded = expandedGrupo,
+                                    onDismissRequest = { expandedGrupo = false },
+                                    modifier = Modifier.exposedDropdownSize().heightIn(max = 200.dp).background(Color(0xFFEAD7BC))
+                                ) {
+                                    filteredGrupos.forEach { gf ->
+                                        DropdownMenuItem(
+                                            text = { Text(gf, color = Color.Black, fontSize = 14.sp) },
+                                            onClick = {
+                                                grupoForza = gf
+                                                expandedGrupo = false
+                                                focusManager.clearFocus()
+                                            }
+                                        )
+                                    }
+                                }
+                            }
+                        }
+
+                        ExposedDropdownMenuBox(
+                            expanded = expandedBloque,
+                            onExpandedChange = { expandedBloque = it },
+                            modifier = Modifier.weight(1f)
+                        ) {
+                            OutlinedTextField(
+                                value = bloque,
+                                onValueChange = { bloque = it },
+                                label = { Text("Bloque", fontSize = 12.sp) },
+                                modifier = Modifier
+                                    .fillMaxWidth()
+                                    .menuAnchor()
+                                    .onFocusChanged { expandedBloque = it.isFocused },
+                                shape = RoundedCornerShape(8.dp),
+                                singleLine = true,
+                                colors = blackTextFieldColors(),
+                                textStyle = LocalTextStyle.current.copy(fontSize = 14.sp),
+                                trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedBloque) }
+                            )
+
+                            val filteredBloques = bloquesUnicos.filter { it.trim().contains(bloque.trim(), ignoreCase = true) }
+
+                            if (expandedBloque && filteredBloques.isNotEmpty()) {
+                                DropdownMenu(
+                                    expanded = expandedBloque,
+                                    onDismissRequest = { expandedBloque = false },
+                                    modifier = Modifier.exposedDropdownSize().heightIn(max = 200.dp).background(Color(0xFFEAD7BC))
+                                ) {
+                                    filteredBloques.forEach { blq ->
+                                        DropdownMenuItem(
+                                            text = { Text(blq, color = Color.Black, fontSize = 14.sp) },
+                                            onClick = {
+                                                bloque = blq
+                                                expandedBloque = false
+                                                val matchedGf = csvData.firstOrNull { it.bloque == blq }?.grupoForza
+                                                if (matchedGf != null) grupoForza = matchedGf
+                                                focusManager.clearFocus()
+                                            }
+                                        )
+                                    }
                                 }
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
+                }
+            }
 
-                    ExposedDropdownMenuBox(
-                        expanded = expandedBloque,
-                        onExpandedChange = { expandedBloque = it },
-                        modifier = Modifier.fillMaxWidth()
-                    ) {
-                        OutlinedTextField(
-                            value = bloque,
-                            onValueChange = { bloque = it },
-                            label = { Text("Número del Bloque") },
-                            modifier = Modifier
-                                .fillMaxWidth()
-                                .menuAnchor()
-                                .onFocusChanged { expandedBloque = it.isFocused },
-                            shape = RoundedCornerShape(12.dp),
-                            singleLine = true,
-                            colors = blackTextFieldColors(),
-                            trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedBloque) }
-                        )
+            Spacer(modifier = Modifier.height(12.dp))
+            
+            Row(
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .horizontalScroll(rememberScrollState()),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                // Section 2 - Part A: Fruta Calidad
+                Card(
+                    modifier = Modifier.width(280.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("Fruta Calidad", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        
+                        CompactCounterRow("C5", c5) { c5 = it }
+                        CompactCounterRow("C6", c6) { c6 = it }
+                        CompactCounterRow("C7", c7) { c7 = it }
+                        CompactCounterRow("C8", c8) { c8 = it }
+                        CompactCounterRow("C9", c9) { c9 = it }
+                        CompactCounterRow("C10", c10) { c10 = it }
+                        CompactCounterRow("Guapita", guapita) { guapita = it }
+                        CompactCounterRow("Baby Guapa", babyGuapa) { babyGuapa = it }
+                    }
+                }
 
-                        val filteredBloques = bloquesUnicos.filter { it.trim().contains(bloque.trim(), ignoreCase = true) }
+                // Section 2 - Part B: Fruta No Recuperada
+                Card(
+                    modifier = Modifier.width(280.dp),
+                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                    shape = RoundedCornerShape(12.dp)
+                ) {
+                    Column(modifier = Modifier.padding(12.dp)) {
+                        Text("Fruta No Recuperada", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        Spacer(modifier = Modifier.height(6.dp))
+                        
+                        CompactCounterRow("Ausente", ausente) { ausente = it }
+                        CompactCounterRow("Daño", dano) { dano = it }
+                        CompactCounterRow("Sin Inducir", sinInducir) { sinInducir = it }
+                        CompactCounterRow("Bajo Peso", bajoPeso) { bajoPeso = it }
+                        CompactCounterRow("Muestreo", muestreo) { muestreo = it }
+                        CompactCounterRow("Fruta Joven", frutaJoven) { frutaJoven = it }
+                    }
+                }
+            }
+            
+            Spacer(modifier = Modifier.height(12.dp))
 
-                        if (expandedBloque && filteredBloques.isNotEmpty()) {
-                            DropdownMenu(
-                                expanded = expandedBloque,
-                                onDismissRequest = { expandedBloque = false },
-                                modifier = Modifier.exposedDropdownSize().heightIn(max = 250.dp).background(Color(0xFFEAD7BC))
-                            ) {
-                                filteredBloques.forEach { blq ->
-                                    DropdownMenuItem(
-                                        text = { Text(blq, color = Color.Black) },
-                                        onClick = {
-                                            bloque = blq
-                                            expandedBloque = false
-                                            val matchedGf = csvData.firstOrNull { it.bloque == blq }?.grupoForza
-                                            if (matchedGf != null) grupoForza = matchedGf
-                                            focusManager.clearFocus()
-                                        }
+            
+            // Section 3: Fruta No Recuperada Calibre (Matrix Table)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("Fruta No Recuperada Calibre", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                        Column {
+                            // Header Row
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.width(100.dp)) // Calibre column spacer
+                                DEFECTOS.forEach { defecto ->
+                                    Text(
+                                        text = defecto,
+                                        modifier = Modifier.width(110.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Bold,
+                                        textAlign = TextAlign.Center
                                     )
+                                }
+                            }
+                            
+                            // Data Rows
+                            CALIBRES.forEach { calibre ->
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+                                    Text(
+                                        text = calibre,
+                                        modifier = Modifier.width(100.dp),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    DEFECTOS.forEach { defecto ->
+                                        Box(modifier = Modifier.width(110.dp), contentAlignment = Alignment.Center) {
+                                            CompactCounterRow(
+                                                label = "", 
+                                                value = nonRecoveredByCalibre["${defecto}_${calibre}"] ?: 0,
+                                                onValueChange = { nonRecoveredByCalibre["${defecto}_${calibre}"] = it }
+                                            )
+                                        }
+                                    }
                                 }
                             }
                         }
                     }
-                    Spacer(modifier = Modifier.height(12.dp))
-                }
-            }
-
-            Spacer(modifier = Modifier.height(24.dp))
-
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text("Fruta Calidad", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    CounterRow("C5", c5) { c5 = it }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("C6", c6) { c6 = it }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("C7", c7) { c7 = it }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("C8", c8) { c8 = it }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("C9", c9) { c9 = it }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("C10", c10) { c10 = it }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("Guapita", guapita) { guapita = it }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("Baby Guapa", babyGuapa) { babyGuapa = it }
                 }
             }
             
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(12.dp))
 
+            // Section 4: Fruta Fuera Especificación (Matrix Table)
             Card(
                 modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
                 colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp)
+                shape = RoundedCornerShape(12.dp)
             ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text("Fruta No Recuperada", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("Fruta Fuera Especificación", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
                     Spacer(modifier = Modifier.height(8.dp))
                     
-                    CounterRow("Ausente", ausente) { ausente = it }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("Daño", dano) { dano = it }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("Sin Inducir", sinInducir) { sinInducir = it }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("Bajo Peso", bajoPeso) { bajoPeso = it }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("Muestreo", muestreo) { muestreo = it }
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp))
-                    CounterRow("Fruta Joven", frutaJoven) { frutaJoven = it }
-                }
-            }
-            
-            Spacer(modifier = Modifier.height(24.dp))
+                    Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                        Column {
+                            // Header Row (Afectaciones)
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                Box(modifier = Modifier.width(100.dp)) // Calibre column spacer
+                                
+                                // Deforme
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(110.dp)) {
+                                    Text(FUERA_ESPEC_SINGLE, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                }
+                                // Fruta Adelantada
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(110.dp)) {
+                                    Text("F. Adel.", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
+                                }
+                                // Dual categories
+                                FUERA_ESPEC_CATS.forEach { cat ->
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(220.dp)) {
+                                        Text(cat, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
+                                        Row {
+                                            Text("Tol", modifier = Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp))
+                                            Text("No Tol", modifier = Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp))
+                                        }
+                                    }
+                                }
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text("Fruta No Recuperada Calibre", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    DEFECTOS.forEach { defecto ->
-                        DefectCategorySection(
-                            category = defecto,
-                            calibreValues = nonRecoveredByCalibre,
-                            onValueChange = { key, newValue ->
-                                nonRecoveredByCalibre[key] = newValue
                             }
-                        )
+                            
+                            // Data Rows
+                            CALIBRES.forEach { calibre ->
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+                                    Text(
+                                        text = calibre,
+                                        modifier = Modifier.width(100.dp),
+                                        style = MaterialTheme.typography.bodySmall,
+                                        fontWeight = FontWeight.Bold
+                                    )
+                                    
+                                    // Deforme
+                                    Box(modifier = Modifier.width(110.dp), contentAlignment = Alignment.Center) {
+                                        CompactCounterRow(label = "", 
+                                            value = fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] ?: 0,
+                                            onValueChange = { fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] = it }
+                                        )
+                                    }
+                                    
+                                    // F. Adelantada
+                                    Box(modifier = Modifier.width(110.dp), contentAlignment = Alignment.Center) {
+                                        CompactCounterRow(label = "", 
+                                            value = fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] ?: 0,
+                                            onValueChange = { fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = it }
+                                        )
+                                    }
+                                    
+                                    // Dual categories
+                                    FUERA_ESPEC_CATS.forEach { cat ->
+                                        Row(modifier = Modifier.width(220.dp)) {
+                                            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                                CompactCounterRow(label = "", 
+                                                    value = fueraEspecificacionCounters["${cat}_${calibre}_Tolerable"] ?: 0,
+                                                    onValueChange = { fueraEspecificacionCounters["${cat}_${calibre}_Tolerable"] = it }
+                                                )
+                                            }
+                                            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
+                                                CompactCounterRow(label = "", 
+                                                    value = fueraEspecificacionCounters["${cat}_${calibre}_No Tolerable"] ?: 0,
+                                                    onValueChange = { fueraEspecificacionCounters["${cat}_${calibre}_No Tolerable"] = it }
+                                                )
+                                            }
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
-            
-            Spacer(modifier = Modifier.height(24.dp))
 
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 8.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(16.dp)
-            ) {
-                Column(modifier = Modifier.padding(20.dp)) {
-                    Text("Fruta Fuera Especificación", style = MaterialTheme.typography.titleLarge, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.height(12.dp))
-                    
-                    FueraEspecificacionDeepCategorySection(
-                        category = FUERA_ESPEC_SINGLE,
-                        isDouble = false,
-                        counters = fueraEspecificacionCounters,
-                        onValueChange = { key, newValue ->
-                            fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${key}"] = newValue
-                        }
-                    )
-                    
-                    FueraEspecificacionDeepCategorySection(
-                        category = FUERA_ESPEC_ADELANTADA,
-                        isDouble = false,
-                        counters = fueraEspecificacionCounters,
-                        onValueChange = { key, newValue ->
-                            fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${key}"] = newValue
-                        }
-                    )
-                    
-                    HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp), thickness = 1.dp)
-
-                    FUERA_ESPEC_CATS.forEach { cat ->
-                        FueraEspecificacionDeepCategorySection(
-                            category = cat,
-                            isDouble = true,
-                            counters = fueraEspecificacionCounters,
-                            onValueChange = { key, newValue ->
-                                fueraEspecificacionCounters["${cat}_${key}"] = newValue
-                            }
-                        )
-                    }
-                }
-            }
 
             Spacer(modifier = Modifier.height(32.dp))
             Button(
@@ -1159,7 +1234,7 @@ fun blackTextFieldColors() = OutlinedTextFieldDefaults.colors(
 )
 
 @Composable
-fun CounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
+fun CompactCounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
     var textValue by remember(value) { mutableStateOf(value.toString()) }
 
     Row(
@@ -1167,16 +1242,26 @@ fun CounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
         horizontalArrangement = Arrangement.SpaceBetween,
         modifier = Modifier
             .fillMaxWidth()
-            .padding(vertical = 4.dp)
+            .padding(vertical = 1.dp)
     ) {
-        Text(text = label, modifier = Modifier.weight(1f), style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.SemiBold)
+        if (label.isNotEmpty()) {
+            Text(
+                text = label, 
+                modifier = Modifier.weight(1f), 
+                style = MaterialTheme.typography.bodySmall, 
+                fontWeight = FontWeight.SemiBold,
+                color = Color.Black,
+                maxLines = 1
+            )
+        }
         
         Row(verticalAlignment = Alignment.CenterVertically) {
             FilledIconButton(
                 onClick = { if (value > 0) onValueChange(value - 1) },
+                modifier = Modifier.size(24.dp),
                 colors = IconButtonDefaults.filledIconButtonColors(containerColor = SecondaryGold, contentColor = Color.Black)
             ) {
-                Text("-", fontSize = 24.sp, fontWeight = FontWeight.Bold)
+                Text("-", fontSize = 14.sp, fontWeight = FontWeight.Bold)
             }
             
             OutlinedTextField(
@@ -1192,125 +1277,29 @@ fun CounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
-                    .width(80.dp)
-                    .padding(horizontal = 8.dp),
+                    .width(48.dp)
+                    .padding(horizontal = 2.dp),
                 singleLine = true,
-                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 18.sp, color = Color.Black),
-                shape = RoundedCornerShape(8.dp),
+                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.Black),
+                shape = RoundedCornerShape(4.dp),
                 colors = OutlinedTextFieldDefaults.colors(
                     focusedBorderColor = PrimaryEarth,
-                    unfocusedBorderColor = SecondaryGold
+                    unfocusedBorderColor = SecondaryGold,
+                    focusedContainerColor = Color.White,
+                    unfocusedContainerColor = Color.White
                 )
             )
             
             FilledIconButton(
                 onClick = { onValueChange(value + 1) },
+                modifier = Modifier.size(24.dp),
                 colors = IconButtonDefaults.filledIconButtonColors(containerColor = PrimaryEarth, contentColor = Color.White)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Más")
+                Icon(Icons.Default.Add, contentDescription = "Más", modifier = Modifier.size(12.dp))
             }
         }
     }
 }
-
-@Composable
-fun FueraEspecificacionDeepCategorySection(
-    category: String,
-    isDouble: Boolean,
-    counters: Map<String, Int>,
-    onValueChange: (String, Int) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Card(
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (expanded) SecondaryGold.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        ),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = category,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryEarth
-                )
-                TextButton(onClick = { expanded = !expanded }) {
-                    Text(if (expanded) "Cerrar" else "Abrir", fontWeight = FontWeight.SemiBold, color = PrimaryEarth)
-                }
-            }
-
-            if (expanded) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Column {
-                    CALIBRES.forEachIndexed { index, calibre ->
-                        val baseKey = "${category}_${calibre}"
-                        FueraEspecificacionCalibreRow(
-                            label = calibre,
-                            isDouble = isDouble,
-                            val1 = if (isDouble) (counters["${baseKey}_Tolerable"] ?: 0) else (counters[baseKey] ?: 0),
-                            val2 = if (isDouble) (counters["${baseKey}_No Tolerable"] ?: 0) else 0,
-                            onVal1Change = { if (isDouble) onValueChange("${calibre}_Tolerable", it) else onValueChange(calibre, it) },
-                            onVal2Change = { if (isDouble) onValueChange("${calibre}_No Tolerable", it) }
-                        )
-                        if (index < CALIBRES.size - 1) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun FueraEspecificacionCalibreRow(
-    label: String,
-    isDouble: Boolean,
-    val1: Int,
-    val2: Int,
-    onVal1Change: (Int) -> Unit,
-    onVal2Change: (Int) -> Unit
-) {
-    Column(modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)) {
-        Text(text = label, style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = PrimaryEarth)
-        Spacer(modifier = Modifier.height(4.dp))
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp),
-            verticalAlignment = Alignment.CenterVertically
-        ) {
-            Column(modifier = Modifier.weight(1f)) {
-                if (isDouble) Text("Tolerable", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                CounterRow(label = "", value = val1, onValueChange = onVal1Change)
-            }
-            if (isDouble) {
-                Column(modifier = Modifier.weight(1f)) {
-                    Text("No Tolerable", style = MaterialTheme.typography.labelSmall, color = Color.Gray)
-                    CounterRow(label = "", value = val2, onValueChange = onVal2Change)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun DefectCategorySection(
-    category: String,
-    calibreValues: Map<String, Int>,
-    onValueChange: (String, Int) -> Unit
-) {
-    var expanded by remember { mutableStateOf(false) }
-
-    Card(
         modifier = Modifier
             .fillMaxWidth()
             .padding(vertical = 4.dp),
