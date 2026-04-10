@@ -1300,51 +1300,7 @@ fun CompactCounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
         }
     }
 }
-        modifier = Modifier
-            .fillMaxWidth()
-            .padding(vertical = 4.dp),
-        colors = CardDefaults.cardColors(
-            containerColor = if (expanded) SecondaryGold.copy(alpha = 0.2f) else MaterialTheme.colorScheme.surfaceVariant.copy(alpha = 0.3f)
-        ),
-        shape = RoundedCornerShape(12.dp)
-    ) {
-        Column(modifier = Modifier.padding(12.dp)) {
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                verticalAlignment = Alignment.CenterVertically,
-                horizontalArrangement = Arrangement.SpaceBetween
-            ) {
-                Text(
-                    text = category,
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = PrimaryEarth
-                )
-                TextButton(onClick = { expanded = !expanded }) {
-                    Text(if (expanded) "Cerrar" else "Abrir", fontWeight = FontWeight.SemiBold, color = PrimaryEarth)
-                }
-            }
 
-            if (expanded) {
-                Spacer(modifier = Modifier.height(8.dp))
-                Column {
-                    CALIBRES.forEachIndexed { index, calibre ->
-                        val key = "${category}_${calibre}"
-                        val value = calibreValues[key] ?: 0
-                        CounterRow(
-                            label = calibre,
-                            value = value,
-                            onValueChange = { newValue -> onValueChange(key, newValue) }
-                        )
-                        if (index < CALIBRES.size - 1) {
-                            HorizontalDivider(modifier = Modifier.padding(vertical = 4.dp), thickness = 0.5.dp)
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
