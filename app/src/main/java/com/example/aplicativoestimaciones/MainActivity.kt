@@ -629,7 +629,6 @@ fun HomeScreen(onNavigateToIngresar: () -> Unit, onNavigateToHistorial: () -> Un
             Spacer(modifier = Modifier.height(40.dp))
             
             HomeButton("Ingresar Datos", Icons.Default.Edit) { onNavigateToIngresar() }
-            HomeButton("Subir Datos", Icons.Default.Share) { /* TODO */ }
             HomeButton("Historico", Icons.Default.List) { onNavigateToHistorial() }
             HomeButton("Actualizar Bloques", Icons.Default.Refresh) { 
                 pickerLauncher.launch("text/*") 
@@ -1025,12 +1024,13 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                 DEFECTOS.forEach { defecto ->
                                     Text(
                                         text = defecto,
-                                        modifier = Modifier.width(110.dp),
+                                        modifier = Modifier.width(140.dp),
                                         style = MaterialTheme.typography.labelSmall,
                                         fontWeight = FontWeight.Bold,
                                         textAlign = TextAlign.Center
                                     )
                                 }
+
                             }
                             
                             // Data Rows
@@ -1043,9 +1043,9 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                         fontWeight = FontWeight.Bold
                                     )
                                     DEFECTOS.forEach { defecto ->
-                                        Box(modifier = Modifier.width(110.dp), contentAlignment = Alignment.Center) {
+                                        Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
                                             CompactCounterRow(
-                                                label = "", 
+                                                label = calibre, 
                                                 value = nonRecoveredByCalibre["${defecto}_${calibre}"] ?: 0,
                                                 onValueChange = { nonRecoveredByCalibre["${defecto}_${calibre}"] = it }
                                             )
@@ -1078,16 +1078,16 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                 Box(modifier = Modifier.width(100.dp)) // Calibre column spacer
                                 
                                 // Deforme
-                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(110.dp)) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(140.dp)) {
                                     Text(FUERA_ESPEC_SINGLE, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                                 }
                                 // Fruta Adelantada
-                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(110.dp)) {
+                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(140.dp)) {
                                     Text("F. Adel.", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
                                 }
                                 // Dual categories
                                 FUERA_ESPEC_CATS.forEach { cat ->
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(220.dp)) {
+                                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(280.dp)) {
                                         Text(cat, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
                                         Row {
                                             Text("Tol", modifier = Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp))
@@ -1095,6 +1095,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                         }
                                     }
                                 }
+
 
                             }
                             
@@ -1109,16 +1110,16 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                     )
                                     
                                     // Deforme
-                                    Box(modifier = Modifier.width(110.dp), contentAlignment = Alignment.Center) {
-                                        CompactCounterRow(label = "", 
+                                    Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
+                                        CompactCounterRow(label = calibre, 
                                             value = fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] ?: 0,
                                             onValueChange = { fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] = it }
                                         )
                                     }
                                     
                                     // F. Adelantada
-                                    Box(modifier = Modifier.width(110.dp), contentAlignment = Alignment.Center) {
-                                        CompactCounterRow(label = "", 
+                                    Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
+                                        CompactCounterRow(label = calibre, 
                                             value = fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] ?: 0,
                                             onValueChange = { fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = it }
                                         )
@@ -1126,15 +1127,15 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                     
                                     // Dual categories
                                     FUERA_ESPEC_CATS.forEach { cat ->
-                                        Row(modifier = Modifier.width(220.dp)) {
+                                        Row(modifier = Modifier.width(280.dp)) {
                                             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                                                CompactCounterRow(label = "", 
+                                                CompactCounterRow(label = calibre, 
                                                     value = fueraEspecificacionCounters["${cat}_${calibre}_Tolerable"] ?: 0,
                                                     onValueChange = { fueraEspecificacionCounters["${cat}_${calibre}_Tolerable"] = it }
                                                 )
                                             }
                                             Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                                                CompactCounterRow(label = "", 
+                                                CompactCounterRow(label = calibre, 
                                                     value = fueraEspecificacionCounters["${cat}_${calibre}_No Tolerable"] ?: 0,
                                                     onValueChange = { fueraEspecificacionCounters["${cat}_${calibre}_No Tolerable"] = it }
                                                 )
