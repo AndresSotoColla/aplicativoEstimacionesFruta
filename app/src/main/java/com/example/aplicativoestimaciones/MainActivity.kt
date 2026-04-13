@@ -471,7 +471,7 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
         }
     }
     
-    // Fuera Especificación matrix
+    // Fuera Especificación matrix (Simplified)
     // Single category: Deforme
     CALIBRES.forEach { calibre ->
         sb.append(",FE_${FUERA_ESPEC_SINGLE}_$calibre")
@@ -480,15 +480,14 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
     CALIBRES.forEach { calibre ->
         sb.append(",FE_${FUERA_ESPEC_ADELANTADA.replace(" ", "_")}_$calibre")
     }
-    // Dual categories
+    // General categories
     FUERA_ESPEC_CATS.forEach { cat ->
         CALIBRES.forEach { calibre ->
-            ESPEC_TYPES.forEach { type ->
-                sb.append(",FE_${cat}_${calibre}_$type")
-            }
+            sb.append(",FE_${cat}_$calibre")
         }
     }
     sb.append("\n")
+
 
     // --- BUILD ROWS ---
     records.forEach { r ->
@@ -508,7 +507,7 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
             }
         }
         
-        // Fuera Especificación counts
+        // Fuera Especificación counts (Simplified)
         // Deforme
         CALIBRES.forEach { calibre ->
             sb.append(",${r.fueraEspecCounts["${FUERA_ESPEC_SINGLE}_$calibre"] ?: 0}")
@@ -517,12 +516,10 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
         CALIBRES.forEach { calibre ->
             sb.append(",${r.fueraEspecCounts["${FUERA_ESPEC_ADELANTADA}_$calibre"] ?: 0}")
         }
-        // Dual categories
+        // General categories
         FUERA_ESPEC_CATS.forEach { cat ->
             CALIBRES.forEach { calibre ->
-                ESPEC_TYPES.forEach { type ->
-                    sb.append(",${r.fueraEspecCounts["${cat}_${calibre}_$type"] ?: 0}")
-                }
+                sb.append(",${r.fueraEspecCounts["${cat}_$calibre"] ?: 0}")
             }
         }
         sb.append("\n")
@@ -746,16 +743,14 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
         }
     }
     
-    // Counters for Fuera Especificación
+    // Counters for Fuera Especificación (Now just simplified single counters)
     val fueraEspecificacionCounters = rememberSaveable(saver = MapSaver) { mutableStateMapOf<String, Int>() }
     
     LaunchedEffect(Unit) {
         if (fueraEspecificacionCounters.isEmpty()) {
             FUERA_ESPEC_CATS.forEach { cat ->
                 CALIBRES.forEach { calibre ->
-                    ESPEC_TYPES.forEach { type ->
-                        fueraEspecificacionCounters["${cat}_${calibre}_${type}"] = 0
-                    }
+                    fueraEspecificacionCounters["${cat}_${calibre}"] = 0
                 }
             }
             CALIBRES.forEach { calibre ->
@@ -766,6 +761,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
             }
         }
     }
+
 
     // REAL-TIME TOTALS
     val calidadTotal by remember { derivedStateOf { c5 + c6 + c7 + c8 + c9 + c10 + guapita + babyGuapa } }
@@ -953,54 +949,145 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
 
             Spacer(modifier = Modifier.height(12.dp))
             
-            Row(
-                modifier = Modifier
-                    .fillMaxWidth()
-                    .horizontalScroll(rememberScrollState()),
-                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            // --- NEW SECTION 2: FRUTA CALIDAD (MATRIX) ---
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(12.dp)
             ) {
-                // Section 2 - Part A: Fruta Calidad
-                Card(
-                    modifier = Modifier.width(280.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text("Fruta Calidad", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.height(6.dp))
-                        
-                        CompactCounterRow("C5", c5) { c5 = it }
-                        CompactCounterRow("C6", c6) { c6 = it }
-                        CompactCounterRow("C7", c7) { c7 = it }
-                        CompactCounterRow("C8", c8) { c8 = it }
-                        CompactCounterRow("C9", c9) { c9 = it }
-                        CompactCounterRow("C10", c10) { c10 = it }
-                        CompactCounterRow("Guapita", guapita) { guapita = it }
-                        CompactCounterRow("Baby Guapa", babyGuapa) { babyGuapa = it }
-                    }
-                }
-
-                // Section 2 - Part B: Fruta No Recuperada
-                Card(
-                    modifier = Modifier.width(280.dp),
-                    elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                    colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                    shape = RoundedCornerShape(12.dp)
-                ) {
-                    Column(modifier = Modifier.padding(12.dp)) {
-                        Text("Fruta No Recuperada", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                        Spacer(modifier = Modifier.height(6.dp))
-                        
-                        CompactCounterRow("Ausente", ausente) { ausente = it }
-                        CompactCounterRow("Daño", dano) { dano = it }
-                        CompactCounterRow("Sin Inducir", sinInducir) { sinInducir = it }
-                        CompactCounterRow("Bajo Peso", bajoPeso) { bajoPeso = it }
-                        CompactCounterRow("Muestreo", muestreo) { muestreo = it }
-                        CompactCounterRow("Fruta Joven", frutaJoven) { frutaJoven = it }
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("Fruta Calidad (Matriz)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(8.dp))
+                    
+                    Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
+                        Column {
+                            // Header Row
+                            Row(verticalAlignment = Alignment.CenterVertically) {
+                                // Sin Afectación
+                                Text(
+                                    text = "Sin afectación",
+                                    modifier = Modifier.width(140.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Black,
+                                    textAlign = TextAlign.Center
+                                )
+                                // Deforme
+                                Text(
+                                    text = FUERA_ESPEC_SINGLE,
+                                    modifier = Modifier.width(140.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Black,
+                                    textAlign = TextAlign.Center
+                                )
+                                // F. Adelantada
+                                Text(
+                                    text = "F. Adel.",
+                                    modifier = Modifier.width(140.dp),
+                                    style = MaterialTheme.typography.labelSmall,
+                                    fontWeight = FontWeight.Black,
+                                    textAlign = TextAlign.Center
+                                )
+                                // Other Categories
+                                FUERA_ESPEC_CATS.forEach { cat ->
+                                    Text(
+                                        text = cat,
+                                        modifier = Modifier.width(140.dp),
+                                        style = MaterialTheme.typography.labelSmall,
+                                        fontWeight = FontWeight.Black,
+                                        textAlign = TextAlign.Center
+                                    )
+                                }
+                            }
+                            
+                            // Data Rows
+                            CALIBRES.forEach { calibre ->
+                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
+                                    // Column: Sin afectación
+                                    Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
+                                        val valSin = when(calibre) {
+                                            "C5" -> c5
+                                            "C6" -> c6
+                                            "C7" -> c7
+                                            "C8" -> c8
+                                            "C9" -> c9
+                                            "C10" -> c10
+                                            "Guapita" -> guapita
+                                            "Baby Guapa" -> babyGuapa
+                                            else -> 0
+                                        }
+                                        CompactCounterRow(
+                                            label = calibre, 
+                                            value = valSin,
+                                            onValueChange = { nv ->
+                                                when(calibre) {
+                                                    "C5" -> c5 = nv
+                                                    "C6" -> c6 = nv
+                                                    "C7" -> c7 = nv
+                                                    "C8" -> c8 = nv
+                                                    "C9" -> c9 = nv
+                                                    "C10" -> c10 = nv
+                                                    "Guapita" -> guapita = nv
+                                                    "Baby Guapa" -> babyGuapa = nv
+                                                }
+                                            }
+                                        )
+                                    }
+                                    
+                                    // Column: Deforme
+                                    Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
+                                        CompactCounterRow(label = calibre, 
+                                            value = fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] ?: 0,
+                                            onValueChange = { fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] = it }
+                                        )
+                                    }
+                                    
+                                    // Column: Fruta Adelantada
+                                    Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
+                                        CompactCounterRow(label = calibre, 
+                                            value = fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] ?: 0,
+                                            onValueChange = { fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = it }
+                                        )
+                                    }
+                                    
+                                    // Columns: Other Categories
+                                    FUERA_ESPEC_CATS.forEach { cat ->
+                                        Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
+                                            CompactCounterRow(label = calibre, 
+                                                value = fueraEspecificacionCounters["${cat}_${calibre}"] ?: 0,
+                                                onValueChange = { fueraEspecificacionCounters["${cat}_${calibre}"] = it }
+                                            )
+                                        }
+                                    }
+                                }
+                            }
+                        }
                     }
                 }
             }
+
+            Spacer(modifier = Modifier.height(12.dp))
+
+            // Section 3: Fruta No Recuperada (Counters)
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
+                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Column(modifier = Modifier.padding(12.dp)) {
+                    Text("Fruta No Recuperada", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Spacer(modifier = Modifier.height(6.dp))
+                    
+                    CompactCounterRow("Ausente", ausente) { ausente = it }
+                    CompactCounterRow("Daño", dano) { dano = it }
+                    CompactCounterRow("Sin Inducir", sinInducir) { sinInducir = it }
+                    CompactCounterRow("Bajo Peso", bajoPeso) { bajoPeso = it }
+                    CompactCounterRow("Muestreo", muestreo) { muestreo = it }
+                    CompactCounterRow("Fruta Joven", frutaJoven) { frutaJoven = it }
+                }
+            }
+
             
             Spacer(modifier = Modifier.height(12.dp))
 
@@ -1053,85 +1140,8 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
             
             Spacer(modifier = Modifier.height(12.dp))
 
-            // Section 4: Fruta Fuera Especificación (Matrix Table)
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                elevation = CardDefaults.cardElevation(defaultElevation = 4.dp),
-                colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface),
-                shape = RoundedCornerShape(12.dp)
-            ) {
-                Column(modifier = Modifier.padding(12.dp)) {
-                    Text("Fruta Fuera Especificación", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                    Spacer(modifier = Modifier.height(8.dp))
-                    
-                    Box(modifier = Modifier.horizontalScroll(rememberScrollState())) {
-                        Column {
-                            // Header Row (Afectaciones)
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                // Deforme
-                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(140.dp)) {
-                                    Text(FUERA_ESPEC_SINGLE, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                                }
-                                // Fruta Adelantada
-                                Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(140.dp)) {
-                                    Text("F. Adel.", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold)
-                                }
-                                // Dual categories
-                                FUERA_ESPEC_CATS.forEach { cat ->
-                                    Column(horizontalAlignment = Alignment.CenterHorizontally, modifier = Modifier.width(280.dp)) {
-                                        Text(cat, style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Bold, textAlign = TextAlign.Center)
-                                        Row {
-                                            Text("Tol", modifier = Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp))
-                                            Text("No Tol", modifier = Modifier.weight(1f), textAlign = TextAlign.Center, style = MaterialTheme.typography.labelSmall.copy(fontSize = 10.sp))
-                                        }
-                                    }
-                                }
+            // --- END OF DATA SECTIONS ---
 
-                            }
-                            
-                            // Data Rows
-                            CALIBRES.forEach { calibre ->
-                                Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.padding(vertical = 4.dp)) {
-                                    // Deforme
-                                    Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
-                                        CompactCounterRow(label = calibre, 
-                                            value = fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] ?: 0,
-                                            onValueChange = { fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] = it }
-                                        )
-                                    }
-                                    
-                                    // F. Adelantada
-                                    Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
-                                        CompactCounterRow(label = calibre, 
-                                            value = fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] ?: 0,
-                                            onValueChange = { fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = it }
-                                        )
-                                    }
-                                    
-                                    // Dual categories
-                                    FUERA_ESPEC_CATS.forEach { cat ->
-                                        Row(modifier = Modifier.width(280.dp)) {
-                                            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                                                CompactCounterRow(label = calibre, 
-                                                    value = fueraEspecificacionCounters["${cat}_${calibre}_Tolerable"] ?: 0,
-                                                    onValueChange = { fueraEspecificacionCounters["${cat}_${calibre}_Tolerable"] = it }
-                                                )
-                                            }
-                                            Box(modifier = Modifier.weight(1f), contentAlignment = Alignment.Center) {
-                                                CompactCounterRow(label = calibre, 
-                                                    value = fueraEspecificacionCounters["${cat}_${calibre}_No Tolerable"] ?: 0,
-                                                    onValueChange = { fueraEspecificacionCounters["${cat}_${calibre}_No Tolerable"] = it }
-                                                )
-                                            }
-                                        }
-                                    }
-                                }
-                            }
-
-                        }
-                    }
-                }
-            }
 
 
             Spacer(modifier = Modifier.height(32.dp))
@@ -1183,9 +1193,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     fueraEspecificacionCounters.clear()
                     FUERA_ESPEC_CATS.forEach { cat ->
                         CALIBRES.forEach { calibre ->
-                            ESPEC_TYPES.forEach { type ->
-                                fueraEspecificacionCounters["${cat}_${calibre}_${type}"] = 0
-                            }
+                            fueraEspecificacionCounters["${cat}_${calibre}"] = 0
                         }
                     }
                     CALIBRES.forEach { calibre ->
@@ -1194,6 +1202,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     CALIBRES.forEach { calibre ->
                         fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = 0
                     }
+
                     
                     Toast.makeText(context, "Formulario listo para nuevo bloque", Toast.LENGTH_SHORT).show()
                 },
@@ -1234,7 +1243,7 @@ fun CompactCounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
                 text = label, 
                 modifier = Modifier.weight(1f), 
                 style = MaterialTheme.typography.bodySmall, 
-                fontWeight = FontWeight.SemiBold,
+                fontWeight = FontWeight.ExtraBold, // 🔥 Más negrita
                 color = Color.Black,
                 maxLines = 1
             )
@@ -1243,10 +1252,10 @@ fun CompactCounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
         Row(verticalAlignment = Alignment.CenterVertically) {
             FilledIconButton(
                 onClick = { if (value > 0) onValueChange(value - 1) },
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(28.dp), // 🔼 Ligeramente más grande
                 colors = IconButtonDefaults.filledIconButtonColors(containerColor = SecondaryGold, contentColor = Color.Black)
             ) {
-                Text("-", fontSize = 14.sp, fontWeight = FontWeight.Bold)
+                Text("-", fontSize = 16.sp, fontWeight = FontWeight.Black)
             }
             
             OutlinedTextField(
@@ -1262,29 +1271,37 @@ fun CompactCounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
                 },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                 modifier = Modifier
-                    .width(48.dp)
+                    .width(64.dp) // 🚀 MÁS ANCHO
                     .padding(horizontal = 2.dp),
                 singleLine = true,
-                textStyle = LocalTextStyle.current.copy(textAlign = TextAlign.Center, fontWeight = FontWeight.Bold, fontSize = 12.sp, color = Color.Black),
+                textStyle = LocalTextStyle.current.copy(
+                    textAlign = TextAlign.Center, 
+                    fontWeight = FontWeight.ExtraBold, // 🔥 Más negrita
+                    fontSize = 16.sp, // 🔼 Fuente más grande
+                    color = Color.Black
+                ),
                 shape = RoundedCornerShape(4.dp),
                 colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = PrimaryEarth,
-                    unfocusedBorderColor = SecondaryGold,
+                    focusedBorderColor = Color.Black, // 🔥 Alto contraste
+                    unfocusedBorderColor = PrimaryEarth,
                     focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White
+                    unfocusedContainerColor = Color.White,
+                    focusedTextColor = Color.Black,
+                    unfocusedTextColor = Color.Black
                 )
             )
             
             FilledIconButton(
                 onClick = { onValueChange(value + 1) },
-                modifier = Modifier.size(24.dp),
+                modifier = Modifier.size(28.dp), // 🔼 Ligeramente más grande
                 colors = IconButtonDefaults.filledIconButtonColors(containerColor = PrimaryEarth, contentColor = Color.White)
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Más", modifier = Modifier.size(12.dp))
+                Icon(Icons.Default.Add, contentDescription = "Más", modifier = Modifier.size(16.dp))
             }
         }
     }
 }
+
 
 
 @OptIn(ExperimentalMaterial3Api::class)
