@@ -123,16 +123,21 @@ data class EstimationRecord(
     val grupoForza: String,
     val bloque: String,
     val calidadTotal: Int,
+    val calidadSinCalidadTotal: Int,
     val noRecuperadaTotal: Int,
     val noRecuperadaCalibreTotal: Int,
     val fueraEspecTotal: Int,
-    // Add detailed maps for "todos los conteos"
+    val fueraEspecSinCalidadTotal: Int,
+    // Detailed maps
     val calidadCounts: Map<String, Int> = emptyMap(),
+    val calidadSinCalidadCounts: Map<String, Int> = emptyMap(),
     val noRecuperadaCounts: Map<String, Int> = emptyMap(),
     val noRecCalibreCounts: Map<String, Int> = emptyMap(),
     val fueraEspecCounts: Map<String, Int> = emptyMap(),
+    val fueraEspecSinCalidadCounts: Map<String, Int> = emptyMap(),
     val isUploaded: Boolean = false
 )
+
 
 fun saveEstimation(context: Context, record: EstimationRecord) {
     val file = File(context.filesDir, "historial.json")
@@ -148,15 +153,20 @@ fun saveEstimation(context: Context, record: EstimationRecord) {
             put("grupoForza", r.grupoForza)
             put("bloque", r.bloque)
             put("calidad", r.calidadTotal)
+            put("calidadSC", r.calidadSinCalidadTotal)
             put("noRecTotal", r.noRecuperadaTotal)
             put("noRecCalTotal", r.noRecuperadaCalibreTotal)
             put("fueraEspec", r.fueraEspecTotal)
+            put("fueraEspecSC", r.fueraEspecSinCalidadTotal)
             // Serialize maps
             put("calidadCounts", JSONObject(r.calidadCounts))
+            put("calidadSCCounts", JSONObject(r.calidadSinCalidadCounts))
             put("noRecCounts", JSONObject(r.noRecuperadaCounts))
             put("noRecCalCounts", JSONObject(r.noRecCalibreCounts))
             put("fueraEspecCounts", JSONObject(r.fueraEspecCounts))
+            put("fueraEspecSCCounts", JSONObject(r.fueraEspecSinCalidadCounts))
             put("isUploaded", r.isUploaded)
+
         }
         jsonArray.put(obj)
     }
@@ -186,14 +196,19 @@ private fun persistFullList(context: Context, list: List<EstimationRecord>) {
             put("grupoForza", r.grupoForza)
             put("bloque", r.bloque)
             put("calidad", r.calidadTotal)
+            put("calidadSC", r.calidadSinCalidadTotal)
             put("noRecTotal", r.noRecuperadaTotal)
             put("noRecCalTotal", r.noRecuperadaCalibreTotal)
             put("fueraEspec", r.fueraEspecTotal)
+            put("fueraEspecSC", r.fueraEspecSinCalidadTotal)
             put("calidadCounts", JSONObject(r.calidadCounts))
+            put("calidadSCCounts", JSONObject(r.calidadSinCalidadCounts))
             put("noRecCounts", JSONObject(r.noRecuperadaCounts))
             put("noRecCalCounts", JSONObject(r.noRecCalibreCounts))
             put("fueraEspecCounts", JSONObject(r.fueraEspecCounts))
+            put("fueraEspecSCCounts", JSONObject(r.fueraEspecSinCalidadCounts))
             put("isUploaded", r.isUploaded)
+
         }
         jsonArray.put(obj)
     }
@@ -226,14 +241,19 @@ fun getHistorial(context: Context): List<EstimationRecord> {
                 grupoForza = obj.getString("grupoForza"),
                 bloque = obj.getString("bloque"),
                 calidadTotal = obj.optInt("calidad", 0),
+                calidadSinCalidadTotal = obj.optInt("calidadSC", 0),
                 noRecuperadaTotal = obj.optInt("noRecTotal", 0),
                 noRecuperadaCalibreTotal = obj.optInt("noRecCalTotal", 0),
                 fueraEspecTotal = obj.optInt("fueraEspec", 0),
+                fueraEspecSinCalidadTotal = obj.optInt("fueraEspecSC", 0),
                 calidadCounts = jsonToMap(obj.optJSONObject("calidadCounts")),
+                calidadSinCalidadCounts = jsonToMap(obj.optJSONObject("calidadSCCounts")),
                 noRecuperadaCounts = jsonToMap(obj.optJSONObject("noRecCounts")),
                 noRecCalibreCounts = jsonToMap(obj.optJSONObject("noRecCalCounts")),
                 fueraEspecCounts = jsonToMap(obj.optJSONObject("fueraEspecCounts")),
+                fueraEspecSinCalidadCounts = jsonToMap(obj.optJSONObject("fueraEspecSCCounts")),
                 isUploaded = obj.optBoolean("isUploaded", false)
+
             ))
         }
     } catch (e: Exception) { e.printStackTrace() }
@@ -455,10 +475,13 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
     val sb = StringBuilder()
     
     // --- BUILD HEADER ---
-    sb.append("ID,Fecha,Semana,Grupo Forza,Bloque,Calidad Total,No Recuperada Total,No Rec Calibre Total,Fuera Espec Total")
+    sb.append("ID,Fecha,Semana,Grupo Forza,Bloque,Calidad Total,Calidad SC Total,No Recuperada Total,No Rec Calibre Total,Fuera Espec Total,Fuera Espec SC Total")
+
     
     // Calidad breakdown
     CALIBRES.forEach { sb.append(",Calidad_$it") }
+    CALIBRES.forEach { sb.append(",CalidadSC_$it") }
+
     
     // No Recuperada (Simple) breakdown
     val noRecCats = listOf("Ausente", "Daño", "Sin Inducir", "Bajo Peso", "Muestreo", "Fruta Joven")
@@ -475,27 +498,34 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
     // Single category: Deforme
     CALIBRES.forEach { calibre ->
         sb.append(",FE_${FUERA_ESPEC_SINGLE}_$calibre")
+        sb.append(",FESC_${FUERA_ESPEC_SINGLE}_$calibre")
     }
     // Single category: Fruta Adelantada
     CALIBRES.forEach { calibre ->
         sb.append(",FE_${FUERA_ESPEC_ADELANTADA.replace(" ", "_")}_$calibre")
+        sb.append(",FESC_${FUERA_ESPEC_ADELANTADA.replace(" ", "_")}_$calibre")
     }
     // General categories
     FUERA_ESPEC_CATS.forEach { cat ->
         CALIBRES.forEach { calibre ->
             sb.append(",FE_${cat}_$calibre")
+            sb.append(",FESC_${cat}_$calibre")
         }
     }
+
     sb.append("\n")
 
 
     // --- BUILD ROWS ---
     records.forEach { r ->
         // Basic info & Totals
-        sb.append("${r.id},\"${r.date}\",\"${r.week}\",\"${r.grupoForza}\",\"${r.bloque}\",${r.calidadTotal},${r.noRecuperadaTotal},${r.noRecuperadaCalibreTotal},${r.fueraEspecTotal}")
+        sb.append("${r.id},\"${r.date}\",\"${r.week}\",\"${r.grupoForza}\",\"${r.bloque}\",${r.calidadTotal},${r.calidadSinCalidadTotal},${r.noRecuperadaTotal},${r.noRecuperadaCalibreTotal},${r.fueraEspecTotal},${r.fueraEspecSinCalidadTotal}")
+
         
         // Calidad counts
         CALIBRES.forEach { sb.append(",${r.calidadCounts[it] ?: 0}") }
+        CALIBRES.forEach { sb.append(",${r.calidadSinCalidadCounts[it] ?: 0}") }
+
         
         // No Recuperada (Simple) counts
         noRecCats.forEach { sb.append(",${r.noRecuperadaCounts[it] ?: 0}") }
@@ -511,17 +541,21 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
         // Deforme
         CALIBRES.forEach { calibre ->
             sb.append(",${r.fueraEspecCounts["${FUERA_ESPEC_SINGLE}_$calibre"] ?: 0}")
+            sb.append(",${r.fueraEspecSinCalidadCounts["${FUERA_ESPEC_SINGLE}_$calibre"] ?: 0}")
         }
         // Fruta Adelantada
         CALIBRES.forEach { calibre ->
             sb.append(",${r.fueraEspecCounts["${FUERA_ESPEC_ADELANTADA}_$calibre"] ?: 0}")
+            sb.append(",${r.fueraEspecSinCalidadCounts["${FUERA_ESPEC_ADELANTADA}_$calibre"] ?: 0}")
         }
         // General categories
         FUERA_ESPEC_CATS.forEach { cat ->
             CALIBRES.forEach { calibre ->
                 sb.append(",${r.fueraEspecCounts["${cat}_$calibre"] ?: 0}")
+                sb.append(",${r.fueraEspecSinCalidadCounts["${cat}_$calibre"] ?: 0}")
             }
         }
+
         sb.append("\n")
     }
 
@@ -722,6 +756,16 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     var guapita by rememberSaveable { mutableStateOf(0) }
     var babyGuapa by rememberSaveable { mutableStateOf(0) }
     
+    // Sin Calidad (SC) counters
+    var c5SC by rememberSaveable { mutableStateOf(0) }
+    var c6SC by rememberSaveable { mutableStateOf(0) }
+    var c7SC by rememberSaveable { mutableStateOf(0) }
+    var c8SC by rememberSaveable { mutableStateOf(0) }
+    var c9SC by rememberSaveable { mutableStateOf(0) }
+    var c10SC by rememberSaveable { mutableStateOf(0) }
+    var guapitaSC by rememberSaveable { mutableStateOf(0) }
+    var babyGuapaSC by rememberSaveable { mutableStateOf(0) }
+
     // Non-recovered fruit counters
     var ausente by rememberSaveable { mutableStateOf(0) }
     var dano by rememberSaveable { mutableStateOf(0) }
@@ -745,30 +789,39 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     
     // Counters for Fuera Especificación (Now just simplified single counters)
     val fueraEspecificacionCounters = rememberSaveable(saver = MapSaver) { mutableStateMapOf<String, Int>() }
+    val fueraEspecificacionSCCounters = rememberSaveable(saver = MapSaver) { mutableStateMapOf<String, Int>() }
+    
+    var selectedQualityTab by rememberSaveable { mutableStateOf(0) }
     
     LaunchedEffect(Unit) {
         if (fueraEspecificacionCounters.isEmpty()) {
             FUERA_ESPEC_CATS.forEach { cat ->
                 CALIBRES.forEach { calibre ->
                     fueraEspecificacionCounters["${cat}_${calibre}"] = 0
+                    fueraEspecificacionSCCounters["${cat}_${calibre}"] = 0
                 }
             }
             CALIBRES.forEach { calibre ->
                 fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] = 0
-            }
-            CALIBRES.forEach { calibre ->
+                fueraEspecificacionSCCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] = 0
+                
                 fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = 0
+                fueraEspecificacionSCCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = 0
             }
         }
     }
 
 
+
     // REAL-TIME TOTALS
     val calidadTotal by remember { derivedStateOf { c5 + c6 + c7 + c8 + c9 + c10 + guapita + babyGuapa } }
+    val calidadSCTotal by remember { derivedStateOf { c5SC + c6SC + c7SC + c8SC + c9SC + c10SC + guapitaSC + babyGuapaSC } }
     val noRecTotal by remember { derivedStateOf { ausente + dano + sinInducir + bajoPeso + muestreo + frutaJoven } }
     val noRecCalTotal by remember { derivedStateOf { nonRecoveredByCalibre.values.sum() } }
     val fueraEspecTotal by remember { derivedStateOf { fueraEspecificacionCounters.values.sum() } }
-    val totalGeneral by remember { derivedStateOf { calidadTotal + noRecTotal + noRecCalTotal + fueraEspecTotal } }
+    val fueraEspecSCTotal by remember { derivedStateOf { fueraEspecificacionSCCounters.values.sum() } }
+    val totalGeneral by remember { derivedStateOf { calidadTotal + calidadSCTotal + noRecTotal + noRecCalTotal + fueraEspecTotal + fueraEspecSCTotal } }
+
 
     Scaffold(
         topBar = {
@@ -813,13 +866,16 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Column {
                             Text("Calidad: $calidadTotal", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
+                            Text("Sin Calidad: $calidadSCTotal", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Color.Red)
                             Text("No Rec.: $noRecTotal", style = MaterialTheme.typography.labelSmall)
                         }
                         Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f)) {
                             Text("No Rec. Cal: $noRecCalTotal", style = MaterialTheme.typography.labelSmall)
                             Text("F. Espec.: $fueraEspecTotal", style = MaterialTheme.typography.labelSmall)
+                            Text("F. Espec. SC: $fueraEspecSCTotal", style = MaterialTheme.typography.labelSmall)
                         }
                     }
+
                 }
             }
 
@@ -957,9 +1013,38 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                 shape = RoundedCornerShape(12.dp)
             ) {
                 Column(modifier = Modifier.padding(12.dp)) {
-                    Text("Fruta Calidad (Matriz)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                    Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
+                        Text("Fruta Calidad (Matriz)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
+                        val totalTab = if (selectedQualityTab == 0) calidadTotal + fueraEspecTotal else calidadSCTotal + fueraEspecSCTotal
+                        Text("Total Pestaña: $totalTab", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold, color = if (selectedQualityTab == 1) Color.Red else Color.Black)
+                    }
                     Spacer(modifier = Modifier.height(8.dp))
                     
+                    // --- TAB SELECTION ---
+                    TabRow(
+                        selectedTabIndex = selectedQualityTab,
+                        containerColor = SurfaceCream,
+                        contentColor = PrimaryEarth,
+                        indicator = { tabPositions ->
+                            TabRowDefaults.SecondaryIndicator(
+                                Modifier.tabIndicatorOffset(tabPositions[selectedQualityTab]),
+                                color = if (selectedQualityTab == 1) Color.Red else PrimaryEarth
+                            )
+                        }
+                    ) {
+                        Tab(
+                            selected = selectedQualityTab == 0,
+                            onClick = { selectedQualityTab = 0 },
+                            text = { Text("Con Calidad", fontWeight = FontWeight.Bold, color = if (selectedQualityTab == 0) PrimaryEarth else Color.Gray) }
+                        )
+                        Tab(
+                            selected = selectedQualityTab == 1,
+                            onClick = { selectedQualityTab = 1 },
+                            text = { Text("Sin Calidad", fontWeight = FontWeight.Bold, color = if (selectedQualityTab == 1) Color.Red else Color.Gray) }
+                        )
+                    }
+                    Spacer(modifier = Modifier.height(12.dp))
+
                     // --- FRUTA CALIDAD MATRIX WITH STICKY COLUMN ---
                     Row {
                         // 1. STICKY COLUMN (LEFT)
@@ -995,27 +1080,44 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(48.dp)) {
                                         // Sin afectación
                                         Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
-                                            val valSin = when(calibre) {
-                                                "C5" -> c5; "C6" -> c6; "C7" -> c7; "C8" -> c8; "C9" -> c9; "C10" -> c10; "Guapita" -> guapita; "Baby Guapa" -> babyGuapa; else -> 0
-                                            }
-                                            CompactCounterRow(label = "", value = valSin, onValueChange = { nv ->
+                                        val valSin = when(calibre) {
+                                            "C5" -> if (selectedQualityTab == 0) c5 else c5SC
+                                            "C6" -> if (selectedQualityTab == 0) c6 else c6SC
+                                            "C7" -> if (selectedQualityTab == 0) c7 else c7SC
+                                            "C8" -> if (selectedQualityTab == 0) c8 else c8SC
+                                            "C9" -> if (selectedQualityTab == 0) c9 else c9SC
+                                            "C10" -> if (selectedQualityTab == 0) c10 else c10SC
+                                            "Guapita" -> if (selectedQualityTab == 0) guapita else guapitaSC
+                                            "Baby Guapa" -> if (selectedQualityTab == 0) babyGuapa else babyGuapaSC
+                                            else -> 0
+                                        }
+                                        CompactCounterRow(label = "", value = valSin, onValueChange = { nv ->
+                                            if (selectedQualityTab == 0) {
                                                 when(calibre) { "C5" -> c5 = nv; "C6" -> c6 = nv; "C7" -> c7 = nv; "C8" -> c8 = nv; "C9" -> c9 = nv; "C10" -> c10 = nv; "Guapita" -> guapita = nv; "Baby Guapa" -> babyGuapa = nv }
-                                            })
+                                            } else {
+                                                when(calibre) { "C5" -> c5SC = nv; "C6" -> c6SC = nv; "C7" -> c7SC = nv; "C8" -> c8SC = nv; "C9" -> c9SC = nv; "C10" -> c10SC = nv; "Guapita" -> guapitaSC = nv; "Baby Guapa" -> babyGuapaSC = nv }
+                                            }
+                                        })
+
                                         }
                                         // Deforme
                                         Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
-                                            CompactCounterRow(label = "", value = fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] ?: 0, onValueChange = { fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] = it })
+                                            val currentMap = if (selectedQualityTab == 0) fueraEspecificacionCounters else fueraEspecificacionSCCounters
+                                        CompactCounterRow(label = "", value = currentMap["${FUERA_ESPEC_SINGLE}_${calibre}"] ?: 0, onValueChange = { currentMap["${FUERA_ESPEC_SINGLE}_${calibre}"] = it })
+
                                         }
                                         // F. Adelantada
                                         Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
-                                            CompactCounterRow(label = "", value = fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] ?: 0, onValueChange = { fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = it })
+                                            val currentMap = if (selectedQualityTab == 0) fueraEspecificacionCounters else fueraEspecificacionSCCounters
+                                        CompactCounterRow(label = "", value = currentMap["${FUERA_ESPEC_ADELANTADA}_${calibre}"] ?: 0, onValueChange = { currentMap["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = it })
+
                                         }
                                         // Others
-                                        FUERA_ESPEC_CATS.forEach { cat ->
-                                            Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
-                                                CompactCounterRow(label = "", value = fueraEspecificacionCounters["${cat}_${calibre}"] ?: 0, onValueChange = { fueraEspecificacionCounters["${cat}_${calibre}"] = it })
-                                            }
+                                        val currentMap = if (selectedQualityTab == 0) fueraEspecificacionCounters else fueraEspecificacionSCCounters
+                                        Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
+                                            CompactCounterRow(label = "", value = currentMap["${cat}_${calibre}"] ?: 0, onValueChange = { currentMap["${cat}_${calibre}"] = it })
                                         }
+
                                     }
                                 }
                             }
@@ -1118,20 +1220,28 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                         grupoForza = grupoForza,
                         bloque = bloque,
                         calidadTotal = calidadTotal,
+                        calidadSinCalidadTotal = calidadSCTotal,
                         noRecuperadaTotal = noRecTotal,
                         noRecuperadaCalibreTotal = noRecCalTotal,
                         fueraEspecTotal = fueraEspecTotal,
+                        fueraEspecSinCalidadTotal = fueraEspecSCTotal,
                         calidadCounts = mapOf(
                             "C5" to c5, "C6" to c6, "C7" to c7, "C8" to c8, "C9" to c9,
                             "C10" to c10, "Guapita" to guapita, "Baby Guapa" to babyGuapa
+                        ),
+                        calidadSinCalidadCounts = mapOf(
+                            "C5" to c5SC, "C6" to c6SC, "C7" to c7SC, "C8" to c8SC, "C9" to c9SC,
+                            "C10" to c10SC, "Guapita" to guapitaSC, "Baby Guapa" to babyGuapaSC
                         ),
                         noRecuperadaCounts = mapOf(
                             "Ausente" to ausente, "Daño" to dano, "Sin Inducir" to sinInducir,
                             "Bajo Peso" to bajoPeso, "Muestreo" to muestreo, "Fruta Joven" to frutaJoven
                         ),
                         noRecCalibreCounts = nonRecoveredByCalibre.toMap(),
-                        fueraEspecCounts = fueraEspecificacionCounters.toMap()
+                        fueraEspecCounts = fueraEspecificacionCounters.toMap(),
+                        fueraEspecSinCalidadCounts = fueraEspecificacionSCCounters.toMap()
                     )
+
                     saveEstimation(context, r)
                     Toast.makeText(context, "Datos guardados correctamente", Toast.LENGTH_SHORT).show()
                     
@@ -1144,6 +1254,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     
                     // Reset counters
                     c5 = 0; c6 = 0; c7 = 0; c8 = 0; c9 = 0; c10 = 0; guapita = 0; babyGuapa = 0
+                    c5SC = 0; c6SC = 0; c7SC = 0; c8SC = 0; c9SC = 0; c10SC = 0; guapitaSC = 0; babyGuapaSC = 0
                     ausente = 0; dano = 0; sinInducir = 0; bajoPeso = 0; muestreo = 0; frutaJoven = 0
                     
                     // Clear and re-initialize maps
@@ -1155,17 +1266,21 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     }
                     
                     fueraEspecificacionCounters.clear()
+                    fueraEspecificacionSCCounters.clear()
                     FUERA_ESPEC_CATS.forEach { cat ->
                         CALIBRES.forEach { calibre ->
                             fueraEspecificacionCounters["${cat}_${calibre}"] = 0
+                            fueraEspecificacionSCCounters["${cat}_${calibre}"] = 0
                         }
                     }
                     CALIBRES.forEach { calibre ->
                         fueraEspecificacionCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] = 0
-                    }
-                    CALIBRES.forEach { calibre ->
+                        fueraEspecificacionSCCounters["${FUERA_ESPEC_SINGLE}_${calibre}"] = 0
+                        
                         fueraEspecificacionCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = 0
+                        fueraEspecificacionSCCounters["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = 0
                     }
+
 
                     
                     Toast.makeText(context, "Formulario listo para nuevo bloque", Toast.LENGTH_SHORT).show()
