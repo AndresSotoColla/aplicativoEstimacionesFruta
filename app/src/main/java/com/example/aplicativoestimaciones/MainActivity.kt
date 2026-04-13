@@ -1113,9 +1113,11 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
 
                                         }
                                         // Others
-                                        val currentMap = if (selectedQualityTab == 0) fueraEspecificacionCounters else fueraEspecificacionSCCounters
-                                        Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
-                                            CompactCounterRow(label = "", value = currentMap["${cat}_${calibre}"] ?: 0, onValueChange = { currentMap["${cat}_${calibre}"] = it })
+                                        FUERA_ESPEC_CATS.forEach { cat ->
+                                            val currentMap = if (selectedQualityTab == 0) fueraEspecificacionCounters else fueraEspecificacionSCCounters
+                                            Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
+                                                CompactCounterRow(label = "", value = currentMap["${cat}_${calibre}"] ?: 0, onValueChange = { currentMap["${cat}_${calibre}"] = it })
+                                            }
                                         }
 
                                     }
