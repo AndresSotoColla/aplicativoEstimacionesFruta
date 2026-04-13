@@ -970,10 +970,11 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                             }
                             // Calibre Rows
                             CALIBRES.forEach { calibre ->
-                                Box(modifier = Modifier.height(44.dp).fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+                                Box(modifier = Modifier.height(48.dp).fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
                                     Text(calibre, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = Color.Black)
                                 }
                             }
+
                         }
 
                         // 2. SCROLLABLE DATA
@@ -991,7 +992,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                 
                                 // Data Rows
                                 CALIBRES.forEach { calibre ->
-                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(44.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(48.dp)) {
                                         // Sin afectación
                                         Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
                                             val valSin = when(calibre) {
@@ -1067,11 +1068,12 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                         Column(modifier = Modifier.width(80.dp)) {
                             Box(modifier = Modifier.height(30.dp)) // Header Spacer
                             CALIBRES.forEach { calibre ->
-                                Box(modifier = Modifier.height(44.dp).fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
+                                Box(modifier = Modifier.height(48.dp).fillMaxWidth(), contentAlignment = Alignment.CenterStart) {
                                     Text(calibre, style = MaterialTheme.typography.bodySmall, fontWeight = FontWeight.Bold, color = Color.Black)
                                 }
                             }
                         }
+
 
                         // 2. SCROLLABLE DATA
                         Box(modifier = Modifier.weight(1f).horizontalScroll(rememberScrollState())) {
@@ -1085,7 +1087,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                 
                                 // Data Rows
                                 CALIBRES.forEach { calibre ->
-                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(44.dp)) {
+                                    Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(48.dp)) {
                                         DEFECTOS.forEach { defecto ->
                                             Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
                                                 CompactCounterRow(label = "", value = nonRecoveredByCalibre["${defecto}_${calibre}"] ?: 0, onValueChange = { nonRecoveredByCalibre["${defecto}_${calibre}"] = it })
@@ -1192,6 +1194,7 @@ fun blackTextFieldColors() = OutlinedTextFieldDefaults.colors(
 @Composable
 fun CompactCounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
     var textValue by remember(value) { mutableStateOf(value.toString()) }
+    val royalBlue = Color(0xFF002366)
 
     Row(
         verticalAlignment = Alignment.CenterVertically,
@@ -1205,65 +1208,70 @@ fun CompactCounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
                 text = label, 
                 modifier = Modifier.weight(1f), 
                 style = MaterialTheme.typography.bodySmall, 
-                fontWeight = FontWeight.ExtraBold,
+                fontWeight = FontWeight.Black,
                 color = Color.Black,
                 maxLines = 1
             )
         }
         
         Row(verticalAlignment = Alignment.CenterVertically) {
-            FilledIconButton(
+            // Decrement Button (Red & Square)
+            Button(
                 onClick = { if (value > 0) onValueChange(value - 1) },
-                modifier = Modifier.size(32.dp), // 🔼 Más grande
-                colors = IconButtonDefaults.filledIconButtonColors(containerColor = Color.Yellow, contentColor = Color.Black) // ☀️ Amarillo Sol
+                modifier = Modifier.size(36.dp),
+                shape = androidx.compose.ui.graphics.RectangleShape,
+                contentPadding = PaddingValues(0.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = Color.Red, contentColor = Color.White)
             ) {
-                Text("-", fontSize = 20.sp, fontWeight = FontWeight.Black)
+                Text("-", fontSize = 22.sp, fontWeight = FontWeight.Black)
             }
             
-            OutlinedTextField(
-                value = textValue,
-                onValueChange = { 
-                    textValue = it
-                    val intValue = it.toIntOrNull()
-                    if (intValue != null && intValue >= 0) {
-                        onValueChange(intValue)
-                    } else if (it.isEmpty()) {
-                        onValueChange(0)
-                    }
-                },
-                keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+            // Custom Input Box (Fixed Truncation)
+            Box(
                 modifier = Modifier
-                    .width(70.dp) // 🚀 Un poco más ancho
-                    .padding(horizontal = 2.dp),
-                singleLine = true,
-                textStyle = LocalTextStyle.current.copy(
-                    textAlign = TextAlign.Center, 
-                    fontWeight = FontWeight.Black, // 🔥 Más pesado
-                    fontSize = 18.sp, // 🔼 Fuente más grande
-                    color = Color.Black
-                ),
-                shape = RoundedCornerShape(4.dp),
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = Color.Black,
-                    unfocusedBorderColor = Color.Black, // 🔥 Siempre negro sólido
-                    focusedContainerColor = Color.White,
-                    unfocusedContainerColor = Color.White,
-                    focusedTextColor = Color.Black,
-                    unfocusedTextColor = Color.Black,
-                    cursorColor = Color.Black
-                )
-            )
-            
-            FilledIconButton(
-                onClick = { onValueChange(value + 1) },
-                modifier = Modifier.size(32.dp), // 🔼 Más grande
-                colors = IconButtonDefaults.filledIconButtonColors(containerColor = PrimaryEarth, contentColor = Color.White)
+                    .width(75.dp)
+                    .height(36.dp)
+                    .padding(horizontal = 2.dp)
+                    .background(Color.White)
+                    .border(2.dp, Color.Black), // Square border
+                contentAlignment = Alignment.Center
             ) {
-                Icon(Icons.Default.Add, contentDescription = "Más", modifier = Modifier.size(20.dp))
+                androidx.compose.foundation.text.BasicTextField(
+                    value = textValue,
+                    onValueChange = { 
+                        textValue = it
+                        val intValue = it.toIntOrNull()
+                        if (intValue != null && intValue >= 0) {
+                            onValueChange(intValue)
+                        } else if (it.isEmpty()) {
+                            onValueChange(0)
+                        }
+                    },
+                    keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                    singleLine = true,
+                    textStyle = LocalTextStyle.current.copy(
+                        textAlign = TextAlign.Center, 
+                        fontWeight = FontWeight.Black,
+                        fontSize = 18.sp,
+                        color = Color.Black
+                    )
+                )
+            }
+            
+            // Increment Button (Royal Blue & Square)
+            Button(
+                onClick = { onValueChange(value + 1) },
+                modifier = Modifier.size(36.dp),
+                shape = androidx.compose.ui.graphics.RectangleShape,
+                contentPadding = PaddingValues(0.dp),
+                colors = ButtonDefaults.buttonColors(containerColor = royalBlue, contentColor = Color.White)
+            ) {
+                Icon(Icons.Default.Add, contentDescription = "Más", modifier = Modifier.size(22.dp))
             }
         }
     }
 }
+
 
 
 
