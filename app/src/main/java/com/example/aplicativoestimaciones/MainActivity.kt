@@ -436,26 +436,29 @@ fun readCsvData(context: Context): List<BloqueData> {
             context.assets.open(fileName)
         }
 
-        inputStream.bufferedReader(charset = Charsets.UTF_8).use { reader ->
+                inputStream.bufferedReader(charset = Charsets.UTF_8).use { reader ->
             reader.forEachLine { rawLine ->
                 val line = rawLine.replace("\uFEFF", "").trim()
                 if (line.isEmpty()) return@forEachLine
                 
-                if (line.startsWith("Bloque", ignoreCase = true) || line.startsWith("GF", ignoreCase = true)) return@forEachLine
+                // Skip header if it starts with known keywords
+                if (line.startsWith("Bloque", ignoreCase = true) || 
+                    line.startsWith("GF", ignoreCase = true) || 
+                    line.startsWith("Grupo", ignoreCase = true)) return@forEachLine
                 
                 val delimiters = listOf(";", ",", "\t")
                 var tokens = emptyList<String>()
                 for (delim in delimiters) {
                     val t = line.split(delim)
-                    if (t.size >= 5) {
+                    if (t.size >= 2) {
                         tokens = t
                         break
                     }
                 }
                 
-                if (tokens.size >= 5) {
-                    val bloque = tokens[2].trim().removeSurrounding("\"").trim()
-                    val gf = tokens[4].trim().removeSurrounding("\"").trim()
+                if (tokens.size >= 2) {
+                    val bloque = tokens[0].trim().removeSurrounding("\"").trim()
+                    val gf = tokens[1].trim().removeSurrounding("\"").trim()
                     if (bloque.isNotEmpty() && gf.isNotEmpty()) {
                         list.add(BloqueData(bloque, gf))
                     }
