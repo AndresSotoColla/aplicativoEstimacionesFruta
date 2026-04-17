@@ -1121,9 +1121,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                 }
                             }
                         }
-                        }
                     }
-
                 }
             }
 
@@ -1296,15 +1294,6 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     }
 }
 
-@Composable
-fun blackTextFieldColors() = OutlinedTextFieldDefaults.colors(
-    focusedTextColor = Color.Black,
-    unfocusedTextColor = Color.Black,
-    focusedBorderColor = PrimaryEarth,
-    unfocusedBorderColor = Color.Gray,
-    focusedLabelColor = PrimaryEarth,
-    unfocusedLabelColor = Color.Gray
-)
 
 @Composable
 fun CompactCounterRow(label: String, value: Int, onValueChange: (Int) -> Unit) {
