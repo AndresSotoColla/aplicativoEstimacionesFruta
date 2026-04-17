@@ -64,9 +64,9 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.example.aplicativoestimaciones.ui.theme.AplicativoEstimacionesTheme
 
-val CALIBRES = listOf("C5", "C6", "C7", "C8", "C9", "C10", "Guapita", "Baby Guapa")
+val CALIBRES = listOf("C5", "C6", "C7", "C8P", "C8", "C9", "C10", "Guapita", "Baby Guapa")
 val DEFECTOS = listOf("Enferma", "Quema Sol Severo", "Deforme", "Daño Insecto", "Daño Mecánico")
-val FUERA_ESPEC_CATS = listOf("Cuello", "Cónica", "Cicatriz", "Base café", "Corona Pequeña", "Corona Grande", "Corona Múltiple", "Cochinilla", "Off Color", "Quema Sol Leve")
+val FUERA_ESPEC_CATS = listOf("Cuello", "Cónica", "Cicatriz", "Base café", "Corona Pequeña", "Corona Grande", "Corona Múltiple", "Cochinilla", "Off Color", "Quema Sol Severa")
 val FUERA_ESPEC_SINGLE = "Deforme"
 val FUERA_ESPEC_ADELANTADA = "Fruta Adelantada"
 val ESPEC_TYPES = listOf("Tolerable", "No Tolerable")
@@ -274,7 +274,7 @@ fun jsonToMap(json: JSONObject?): Map<String, Int> {
 // --- API MAPS & UPLOAD LOGIC ---
 val API_CALIBRE_MAP = mapOf(
     "BABY GUAPA" to 1, "GUAPITA" to 2, "C10" to 3, "C9" to 4, "C8" to 5, "C7" to 6, "C6" to 7, "C5" to 8,
-    "SOBRE PESO" to 9, "BAJO PESO" to 10, "SIN CALIBRE" to 11
+    "SOBRE PESO" to 9, "BAJO PESO" to 10, "SIN CALIBRE" to 11, "C8P" to 12
 )
 
 val API_RAZON_MAP = mapOf(
@@ -285,7 +285,7 @@ val API_RAZON_MAP = mapOf(
 val API_AFECTACION_MAP = mapOf(
     "Fruta Adelantada" to 13, "Deforme" to 1, "Cuello" to 2, "Cónica" to 3, "Cicatriz" to 4, "Base café" to 5,
     "Cónica Inclinada" to 6, "Corona Pequeña" to 7, "Corona Grande" to 8, "Corona Múltiple" to 9, "Cochinilla" to 10,
-    "Off Color" to 11, "Quema Sol Leve" to 12
+    "Off Color" to 11, "Quema Sol Severa" to 14
 )
 
 fun isNetworkAvailable(context: Context): Boolean {
@@ -750,6 +750,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     var c5 by rememberSaveable { mutableStateOf(0) }
     var c6 by rememberSaveable { mutableStateOf(0) }
     var c7 by rememberSaveable { mutableStateOf(0) }
+    var c8P by rememberSaveable { mutableStateOf(0) }
     var c8 by rememberSaveable { mutableStateOf(0) }
     var c9 by rememberSaveable { mutableStateOf(0) }
     var c10 by rememberSaveable { mutableStateOf(0) }
@@ -760,6 +761,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     var c5SC by rememberSaveable { mutableStateOf(0) }
     var c6SC by rememberSaveable { mutableStateOf(0) }
     var c7SC by rememberSaveable { mutableStateOf(0) }
+    var c8PSC by rememberSaveable { mutableStateOf(0) }
     var c8SC by rememberSaveable { mutableStateOf(0) }
     var c9SC by rememberSaveable { mutableStateOf(0) }
     var c10SC by rememberSaveable { mutableStateOf(0) }
@@ -814,8 +816,8 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
 
 
     // REAL-TIME TOTALS
-    val calidadTotal by remember { derivedStateOf { c5 + c6 + c7 + c8 + c9 + c10 + guapita + babyGuapa } }
-    val calidadSCTotal by remember { derivedStateOf { c5SC + c6SC + c7SC + c8SC + c9SC + c10SC + guapitaSC + babyGuapaSC } }
+    val calidadTotal by remember { derivedStateOf { c5 + c6 + c7 + c8P + c8 + c9 + c10 + guapita + babyGuapa } }
+    val calidadSCTotal by remember { derivedStateOf { c5SC + c6SC + c7SC + c8PSC + c8SC + c9SC + c10SC + guapitaSC + babyGuapaSC } }
     val noRecTotal by remember { derivedStateOf { ausente + dano + sinInducir + bajoPeso + muestreo + frutaJoven } }
     val noRecCalTotal by remember { derivedStateOf { nonRecoveredByCalibre.values.sum() } }
     val fueraEspecTotal by remember { derivedStateOf { fueraEspecificacionCounters.values.sum() } }
@@ -1067,8 +1069,12 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                             Column {
                                 // Header Row
                                 Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(30.dp)) {
-                                    Text(text = "Sin afectación", modifier = Modifier.width(140.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
-                                    Text(text = FUERA_ESPEC_SINGLE, modifier = Modifier.width(140.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
+                                    if (selectedQualityTab == 0) {
+                                        Text(text = "Sin afectación", modifier = Modifier.width(140.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
+                                    }
+                                    if (selectedQualityTab == 1) {
+                                        Text(text = FUERA_ESPEC_SINGLE, modifier = Modifier.width(140.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
+                                    }
                                     Text(text = "F. Adel.", modifier = Modifier.width(140.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
                                     FUERA_ESPEC_CATS.forEach { cat ->
                                         Text(text = cat, modifier = Modifier.width(140.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
@@ -1078,39 +1084,31 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                 // Data Rows
                                 CALIBRES.forEach { calibre ->
                                     Row(verticalAlignment = Alignment.CenterVertically, modifier = Modifier.height(48.dp)) {
-                                        // Sin afectación
-                                        Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
-                                        val valSin = when(calibre) {
-                                            "C5" -> if (selectedQualityTab == 0) c5 else c5SC
-                                            "C6" -> if (selectedQualityTab == 0) c6 else c6SC
-                                            "C7" -> if (selectedQualityTab == 0) c7 else c7SC
-                                            "C8" -> if (selectedQualityTab == 0) c8 else c8SC
-                                            "C9" -> if (selectedQualityTab == 0) c9 else c9SC
-                                            "C10" -> if (selectedQualityTab == 0) c10 else c10SC
-                                            "Guapita" -> if (selectedQualityTab == 0) guapita else guapitaSC
-                                            "Baby Guapa" -> if (selectedQualityTab == 0) babyGuapa else babyGuapaSC
-                                            else -> 0
-                                        }
-                                        CompactCounterRow(label = "", value = valSin, onValueChange = { nv ->
-                                            if (selectedQualityTab == 0) {
-                                                when(calibre) { "C5" -> c5 = nv; "C6" -> c6 = nv; "C7" -> c7 = nv; "C8" -> c8 = nv; "C9" -> c9 = nv; "C10" -> c10 = nv; "Guapita" -> guapita = nv; "Baby Guapa" -> babyGuapa = nv }
-                                            } else {
-                                                when(calibre) { "C5" -> c5SC = nv; "C6" -> c6SC = nv; "C7" -> c7SC = nv; "C8" -> c8SC = nv; "C9" -> c9SC = nv; "C10" -> c10SC = nv; "Guapita" -> guapitaSC = nv; "Baby Guapa" -> babyGuapaSC = nv }
+                                        // Sin afectación (Solo en Con Calidad)
+                                        if (selectedQualityTab == 0) {
+                                            Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
+                                                val valSin = when(calibre) {
+                                                    "C5" -> c5; "C6" -> c6; "C7" -> c7; "C8P" -> c8P; "C8" -> c8; "C9" -> c9; "C10" -> c10; "Guapita" -> guapita; "Baby Guapa" -> babyGuapa
+                                                    else -> 0
+                                                }
+                                                CompactCounterRow(label = "", value = valSin, onValueChange = { nv ->
+                                                    when(calibre) { "C5" -> c5 = nv; "C6" -> c6 = nv; "C7" -> c7 = nv; "C8P" -> c8P = nv; "C8" -> c8 = nv; "C9" -> c9 = nv; "C10" -> c10 = nv; "Guapita" -> guapita = nv; "Baby Guapa" -> babyGuapa = nv }
+                                                })
                                             }
-                                        })
-
                                         }
-                                        // Deforme
-                                        Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
-                                            val currentMap = if (selectedQualityTab == 0) fueraEspecificacionCounters else fueraEspecificacionSCCounters
-                                        CompactCounterRow(label = "", value = currentMap["${FUERA_ESPEC_SINGLE}_${calibre}"] ?: 0, onValueChange = { currentMap["${FUERA_ESPEC_SINGLE}_${calibre}"] = it })
 
+                                        // Deforme (Solo en Sin Calidad)
+                                        if (selectedQualityTab == 1) {
+                                            Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
+                                                val currentMap = fueraEspecificacionSCCounters
+                                                CompactCounterRow(label = "", value = currentMap["${FUERA_ESPEC_SINGLE}_${calibre}"] ?: 0, onValueChange = { currentMap["${FUERA_ESPEC_SINGLE}_${calibre}"] = it })
+                                            }
                                         }
+
                                         // F. Adelantada
                                         Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
                                             val currentMap = if (selectedQualityTab == 0) fueraEspecificacionCounters else fueraEspecificacionSCCounters
-                                        CompactCounterRow(label = "", value = currentMap["${FUERA_ESPEC_ADELANTADA}_${calibre}"] ?: 0, onValueChange = { currentMap["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = it })
-
+                                            CompactCounterRow(label = "", value = currentMap["${FUERA_ESPEC_ADELANTADA}_${calibre}"] ?: 0, onValueChange = { currentMap["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = it })
                                         }
                                         // Others
                                         FUERA_ESPEC_CATS.forEach { cat ->
@@ -1119,10 +1117,10 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                                 CompactCounterRow(label = "", value = currentMap["${cat}_${calibre}"] ?: 0, onValueChange = { currentMap["${cat}_${calibre}"] = it })
                                             }
                                         }
-
                                     }
                                 }
                             }
+                        }
                         }
                     }
 
@@ -1228,11 +1226,11 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                         fueraEspecTotal = fueraEspecTotal,
                         fueraEspecSinCalidadTotal = fueraEspecSCTotal,
                         calidadCounts = mapOf(
-                            "C5" to c5, "C6" to c6, "C7" to c7, "C8" to c8, "C9" to c9,
+                            "C5" to c5, "C6" to c6, "C7" to c7, "C8P" to c8P, "C8" to c8, "C9" to c9,
                             "C10" to c10, "Guapita" to guapita, "Baby Guapa" to babyGuapa
                         ),
                         calidadSinCalidadCounts = mapOf(
-                            "C5" to c5SC, "C6" to c6SC, "C7" to c7SC, "C8" to c8SC, "C9" to c9SC,
+                            "C5" to c5SC, "C6" to c6SC, "C7" to c7SC, "C8PSC" to c8PSC, "C8SC" to c8SC, "C9" to c9SC,
                             "C10" to c10SC, "Guapita" to guapitaSC, "Baby Guapa" to babyGuapaSC
                         ),
                         noRecuperadaCounts = mapOf(
@@ -1255,8 +1253,8 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     bloque = ""
                     
                     // Reset counters
-                    c5 = 0; c6 = 0; c7 = 0; c8 = 0; c9 = 0; c10 = 0; guapita = 0; babyGuapa = 0
-                    c5SC = 0; c6SC = 0; c7SC = 0; c8SC = 0; c9SC = 0; c10SC = 0; guapitaSC = 0; babyGuapaSC = 0
+                    c5 = 0; c6 = 0; c7 = 0; c8P = 0; c8 = 0; c9 = 0; c10 = 0; guapita = 0; babyGuapa = 0
+                    c5SC = 0; c6SC = 0; c7SC = 0; c8PSC = 0; c8SC = 0; c9SC = 0; c10SC = 0; guapitaSC = 0; babyGuapaSC = 0
                     ausente = 0; dano = 0; sinInducir = 0; bajoPeso = 0; muestreo = 0; frutaJoven = 0
                     
                     // Clear and re-initialize maps
