@@ -70,7 +70,7 @@ import com.example.aplicativoestimaciones.ui.theme.AplicativoEstimacionesTheme
 
 val CALIBRES = listOf("C5", "C6", "C7", "C8P", "C8", "C9", "C10", "Guapita", "Baby Guapa")
 val DEFECTOS = listOf("Enferma", "Quema Sol Severo", "Deforme", "Daño Insecto", "Daño Mecánico")
-val FUERA_ESPEC_CATS = listOf("Cuello", "Cónica", "Cicatriz", "Base café", "Corona Pequeña", "Corona Grande", "Corona Múltiple", "Cochinilla", "Off Color", "Quema Sol Severa")
+val FUERA_ESPEC_CATS = listOf("Cuello", "Cónica", "Cicatriz", "Base café", "Corona Pequeña", "Corona Grande", "Corona Múltiple", "Cochinilla", "Off Color", "Quema Sol Leve", "Quema Sol Severa")
 val FUERA_ESPEC_SINGLE = "Deforme"
 val FUERA_ESPEC_ADELANTADA = "Fruta Adelantada"
 val ESPEC_TYPES = listOf("Tolerable", "No Tolerable")
@@ -282,14 +282,14 @@ val API_CALIBRE_MAP = mapOf(
 )
 
 val API_RAZON_MAP = mapOf(
-    "Ausente" to 1, "Daño" to 2, "Sin inducir" to 3, "Bajo peso" to 4, "Muestreo" to 5, "Fruta joven" to 6,
-    "Enferma" to 7, "Quema sol severo" to 8, "Deforme" to 9, "Daño insecto" to 10, "Daño mecanico" to 11
+    "Ausente" to 1, "Daño" to 2, "Sin inducir" to 3, "Bajo peso" to 4, "Muestreo" to 5, "Fruta Joven" to 6,
+    "Enferma" to 7, "Quema Sol Severo" to 8, "Deforme" to 9, "Daño insecto" to 10, "Daño mecanico" to 11
 )
 
 val API_AFECTACION_MAP = mapOf(
     "Fruta Adelantada" to 13, "Deforme" to 1, "Cuello" to 2, "Cónica" to 3, "Cicatriz" to 4, "Base café" to 5,
     "Cónica Inclinada" to 6, "Corona Pequeña" to 7, "Corona Grande" to 8, "Corona Múltiple" to 9, "Cochinilla" to 10,
-    "Off Color" to 11, "Quema Sol Severa" to 14
+    "Off Color" to 11, "Quema Sol Leve" to 12, "Quema Sol Severa" to 14
 )
 
 fun isNetworkAvailable(context: Context): Boolean {
@@ -799,6 +799,13 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     
     var selectedQualityTab by rememberSaveable { mutableStateOf(0) }
     
+    val displayedCats = remember(selectedQualityTab) {
+        FUERA_ESPEC_CATS.filter { cat ->
+            if (selectedQualityTab == 0) cat != "Quema Sol Severa"
+            else cat != "Quema Sol Leve"
+        }
+    }
+    
     LaunchedEffect(Unit) {
         if (fueraEspecificacionCounters.isEmpty()) {
             FUERA_ESPEC_CATS.forEach { cat ->
@@ -1080,7 +1087,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                         Text(text = FUERA_ESPEC_SINGLE, modifier = Modifier.width(140.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
                                     }
                                     Text(text = "F. Adel.", modifier = Modifier.width(140.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
-                                    FUERA_ESPEC_CATS.forEach { cat ->
+                                    displayedCats.forEach { cat ->
                                         Text(text = cat, modifier = Modifier.width(140.dp), style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.Black, textAlign = TextAlign.Center)
                                     }
                                 }
@@ -1115,7 +1122,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                                             CompactCounterRow(label = "", value = currentMap["${FUERA_ESPEC_ADELANTADA}_${calibre}"] ?: 0, onValueChange = { currentMap["${FUERA_ESPEC_ADELANTADA}_${calibre}"] = it })
                                         }
                                         // Others
-                                        FUERA_ESPEC_CATS.forEach { cat ->
+                                        displayedCats.forEach { cat ->
                                             val currentMap = if (selectedQualityTab == 0) fueraEspecificacionCounters else fueraEspecificacionSCCounters
                                             Box(modifier = Modifier.width(140.dp), contentAlignment = Alignment.Center) {
                                                 CompactCounterRow(label = "", value = currentMap["${cat}_${calibre}"] ?: 0, onValueChange = { currentMap["${cat}_${calibre}"] = it })
@@ -1232,7 +1239,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                             "C10" to c10, "Guapita" to guapita, "Baby Guapa" to babyGuapa
                         ),
                         calidadSinCalidadCounts = mapOf(
-                            "C5" to c5SC, "C6" to c6SC, "C7" to c7SC, "C8PSC" to c8PSC, "C8SC" to c8SC, "C9" to c9SC,
+                            "C5" to c5SC, "C6" to c6SC, "C7" to c7SC, "C8P" to c8PSC, "C8" to c8SC, "C9" to c9SC,
                             "C10" to c10SC, "Guapita" to guapitaSC, "Baby Guapa" to babyGuapaSC
                         ),
                         noRecuperadaCounts = mapOf(
