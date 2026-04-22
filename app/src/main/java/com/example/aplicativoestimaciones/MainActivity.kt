@@ -127,20 +127,19 @@ data class EstimationRecord(
     val grupoForza: String,
     val bloque: String,
     val calidadTotal: Int,
-    val calidadSinCalidadTotal: Int,
     val noRecuperadaTotal: Int,
     val noRecuperadaCalibreTotal: Int,
     val fueraEspecTotal: Int,
     val fueraEspecSinCalidadTotal: Int,
     // Detailed maps
     val calidadCounts: Map<String, Int> = emptyMap(),
-    val calidadSinCalidadCounts: Map<String, Int> = emptyMap(),
     val noRecuperadaCounts: Map<String, Int> = emptyMap(),
     val noRecCalibreCounts: Map<String, Int> = emptyMap(),
     val fueraEspecCounts: Map<String, Int> = emptyMap(),
     val fueraEspecSinCalidadCounts: Map<String, Int> = emptyMap(),
     val isUploaded: Boolean = false
 )
+
 
 
 fun saveEstimation(context: Context, record: EstimationRecord) {
@@ -157,14 +156,12 @@ fun saveEstimation(context: Context, record: EstimationRecord) {
             put("grupoForza", r.grupoForza)
             put("bloque", r.bloque)
             put("calidad", r.calidadTotal)
-            put("calidadSC", r.calidadSinCalidadTotal)
             put("noRecTotal", r.noRecuperadaTotal)
             put("noRecCalTotal", r.noRecuperadaCalibreTotal)
             put("fueraEspec", r.fueraEspecTotal)
             put("fueraEspecSC", r.fueraEspecSinCalidadTotal)
             // Serialize maps
             put("calidadCounts", JSONObject(r.calidadCounts))
-            put("calidadSCCounts", JSONObject(r.calidadSinCalidadCounts))
             put("noRecCounts", JSONObject(r.noRecuperadaCounts))
             put("noRecCalCounts", JSONObject(r.noRecCalibreCounts))
             put("fueraEspecCounts", JSONObject(r.fueraEspecCounts))
@@ -245,20 +242,18 @@ fun getHistorial(context: Context): List<EstimationRecord> {
                 grupoForza = obj.getString("grupoForza"),
                 bloque = obj.getString("bloque"),
                 calidadTotal = obj.optInt("calidad", 0),
-                calidadSinCalidadTotal = obj.optInt("calidadSC", 0),
                 noRecuperadaTotal = obj.optInt("noRecTotal", 0),
                 noRecuperadaCalibreTotal = obj.optInt("noRecCalTotal", 0),
                 fueraEspecTotal = obj.optInt("fueraEspec", 0),
                 fueraEspecSinCalidadTotal = obj.optInt("fueraEspecSC", 0),
                 calidadCounts = jsonToMap(obj.optJSONObject("calidadCounts")),
-                calidadSinCalidadCounts = jsonToMap(obj.optJSONObject("calidadSCCounts")),
                 noRecuperadaCounts = jsonToMap(obj.optJSONObject("noRecCounts")),
                 noRecCalibreCounts = jsonToMap(obj.optJSONObject("noRecCalCounts")),
                 fueraEspecCounts = jsonToMap(obj.optJSONObject("fueraEspecCounts")),
                 fueraEspecSinCalidadCounts = jsonToMap(obj.optJSONObject("fueraEspecSCCounts")),
                 isUploaded = obj.optBoolean("isUploaded", false)
-
             ))
+
         }
     } catch (e: Exception) { e.printStackTrace() }
     return list
@@ -299,6 +294,11 @@ fun isNetworkAvailable(context: Context): Boolean {
     return capabilities.hasCapability(android.net.NetworkCapabilities.NET_CAPABILITY_INTERNET)
 }
 
+fun normString(s: String): String {
+    val normalized = java.text.Normalizer.normalize(s, java.text.Normalizer.Form.NFD)
+    return normalized.replace(Regex("\\p{InCombiningDiacriticalMarks}+"), "").uppercase().trim()
+}
+
 fun uploadRecord(context: Context, record: EstimationRecord, onResult: (Boolean, String) -> Unit) {
     if (!isNetworkAvailable(context)) {
         onResult(false, "No hay internet. Conéctate para subir datos.")
@@ -318,82 +318,86 @@ fun uploadRecord(context: Context, record: EstimationRecord, onResult: (Boolean,
             val dateParts = parts[0].split("/")
             val apiDate = "${dateParts[2]}-${dateParts[1]}-${dateParts[0]}" // YYYY-MM-DD
             val apiTime = if (parts.size > 1) "${parts[1]}:00" else "00:00:00"
+            
+            val grupoForzaNum = record.grupoForza.filter { it.isDigit() }.let { if (it.isEmpty()) "0" else it }
 
             val jsonOutput = JSONObject().apply {
                 put("bloque", record.bloque)
-                put("grupo_forza", record.grupoForza.filter { it.isDigit() }.let { if (it.isEmpty()) 0 else it.toInt() })
+                put("grupo_forza", grupoForzaNum)
                 put("fecha", apiDate)
                 put("hora", apiTime)
-                put("semana", record.week.toIntOrNull() ?: 0)
+                put("semana", record.week)
 
-                // 1. Calidad
-                val calidadArray = JSONArray()
-                record.calidadCounts.forEach { (name, count) ->
+                val itemsArray = JSONArray()
+
+                // 1. CALIDAD
+                record.calidadCounts.forEach { (calibre, count) ->
                     if (count > 0) {
-                        val id = API_CALIBRE_MAP[name.uppercase()] ?: 11
-                        calidadArray.put(JSONObject().apply {
-                            put("id_calibre", id)
+                        itemsArray.put(JSONObject().apply {
+                            put("tipo", "CALIDAD")
+                            put("calibre", normString(calibre))
                             put("conteo", count)
                         })
                     }
                 }
-                put("calidad", calidadArray)
 
-                // 2. No Recuperada
-                val noRecArray = JSONArray()
-                // Simple cats (id_calibre = 11 for Sin Calibre)
-                record.noRecuperadaCounts.forEach { (name, count) ->
+                // 2. FE (Fuera Espec - Con Calidad)
+                record.fueraEspecCounts.forEach { (key, count) ->
                     if (count > 0) {
-                        val idRazon = API_RAZON_MAP[name] ?: 11
-                        noRecArray.put(JSONObject().apply {
-                            put("id_razon", idRazon)
-                            put("id_calibre", 11)
-                            put("conteo", count)
-                        })
-                    }
-                }
-                // Matrix cats (NRC_Reason_Calibre)
-                record.noRecCalibreCounts.forEach { (key, count) ->
-                    if (count > 0) {
-                        val parts = key.split("_")
-                        if (parts.size >= 2) {
-                            val idRazon = API_RAZON_MAP[parts[0]] ?: 11
-                            val idCal = API_CALIBRE_MAP[parts[1].uppercase()] ?: 11
-                            noRecArray.put(JSONObject().apply {
-                                put("id_razon", idRazon)
-                                put("id_calibre", idCal)
+                        val kParts = key.split("_")
+                        if (kParts.size >= 2) {
+                            itemsArray.put(JSONObject().apply {
+                                put("tipo", "FE")
+                                put("calibre", normString(kParts[1]))
+                                put("afectacion", normString(kParts[0]))
                                 put("conteo", count)
                             })
                         }
                     }
                 }
-                put("no_recuperada", noRecArray)
 
-                // 3. Fuera Especificación
-                val feArray = JSONArray()
-                record.fueraEspecCounts.forEach { (key, count) ->
+                // 3. NOREC (No Recuperada Simple)
+                record.noRecuperadaCounts.forEach { (label, count) ->
                     if (count > 0) {
-                        val parts = key.split("_")
-                        if (parts.size >= 2) {
-                            val idAfe = API_AFECTACION_MAP[parts[0]] ?: 0
-                            if (idAfe > 0) {
-                                val idCal = API_CALIBRE_MAP[parts[1].uppercase()] ?: 11
-                                // Tolerance: 1 Tolerable, 2 No Tolerable, 3 Sin Tolerancia
-                                val idTol = when {
-                                    parts.size >= 3 -> if (parts[2] == "Tolerable") 1 else 2
-                                    else -> 3
-                                }
-                                feArray.put(JSONObject().apply {
-                                    put("id_afectacion", idAfe)
-                                    put("id_calibre", idCal)
-                                    put("id_tolerancia", idTol)
-                                    put("conteo", count)
-                                })
-                            }
+                        itemsArray.put(JSONObject().apply {
+                            put("tipo", "NOREC")
+                            put("afectacion", normString(label))
+                            put("conteo", count)
+                        })
+                    }
+                }
+
+                // 4. NRC (No Recuperada x Calibre)
+                record.noRecCalibreCounts.forEach { (key, count) ->
+                    if (count > 0) {
+                        val kParts = key.split("_")
+                        if (kParts.size >= 2) {
+                            itemsArray.put(JSONObject().apply {
+                                put("tipo", "NRC")
+                                put("calibre", normString(kParts[1]))
+                                put("afectacion", normString(kParts[0]))
+                                put("conteo", count)
+                            })
                         }
                     }
                 }
-                put("fuera_especificacion", feArray)
+
+                // 5. FESC (Sin Calidad)
+                record.fueraEspecSinCalidadCounts.forEach { (key, count) ->
+                    if (count > 0) {
+                        val kParts = key.split("_")
+                        if (kParts.size >= 2) {
+                            itemsArray.put(JSONObject().apply {
+                                put("tipo", "FESC")
+                                put("calibre", normString(kParts[1]))
+                                put("afectacion", normString(kParts[0]))
+                                put("conteo", count)
+                            })
+                        }
+                    }
+                }
+
+                put("items", itemsArray)
             }
 
             conn.outputStream.use { it.write(jsonOutput.toString().toByteArray(StandardCharsets.UTF_8)) }
@@ -410,6 +414,7 @@ fun uploadRecord(context: Context, record: EstimationRecord, onResult: (Boolean,
     }
     thread.start()
 }
+
 
 // Custom saver for SnapshotStateMap to survive rotation
 val MapSaver = Saver<SnapshotStateMap<String, Int>, HashMap<String, Int>>(
@@ -482,12 +487,13 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
     val sb = StringBuilder()
     
     // --- BUILD HEADER ---
-    sb.append("ID,Fecha,Semana,Grupo Forza,Bloque,Calidad Total,Calidad SC Total,No Recuperada Total,No Rec Calibre Total,Fuera Espec Total,Fuera Espec SC Total")
+    sb.append("ID,Fecha,Semana,Grupo Forza,Bloque,Calidad Total,No Recuperada Total,No Rec Calibre Total,Fuera Espec Total,Fuera Espec SC Total")
+
 
     
     // Calidad breakdown
     CALIBRES.forEach { sb.append(",Calidad_$it") }
-    CALIBRES.forEach { sb.append(",CalidadSC_$it") }
+
 
     
     // No Recuperada (Simple) breakdown
@@ -526,12 +532,13 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
     // --- BUILD ROWS ---
     records.forEach { r ->
         // Basic info & Totals
-        sb.append("${r.id},\"${r.date}\",\"${r.week}\",\"${r.grupoForza}\",\"${r.bloque}\",${r.calidadTotal},${r.calidadSinCalidadTotal},${r.noRecuperadaTotal},${r.noRecuperadaCalibreTotal},${r.fueraEspecTotal},${r.fueraEspecSinCalidadTotal}")
+        sb.append("${r.id},\"${r.date}\",\"${r.week}\",\"${r.grupoForza}\",\"${r.bloque}\",${r.calidadTotal},${r.noRecuperadaTotal},${r.noRecuperadaCalibreTotal},${r.fueraEspecTotal},${r.fueraEspecSinCalidadTotal}")
+
 
         
         // Calidad counts
         CALIBRES.forEach { sb.append(",${r.calidadCounts[it] ?: 0}") }
-        CALIBRES.forEach { sb.append(",${r.calidadSinCalidadCounts[it] ?: 0}") }
+
 
         
         // No Recuperada (Simple) counts
@@ -763,17 +770,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     var c10 by rememberSaveable { mutableStateOf(0) }
     var guapita by rememberSaveable { mutableStateOf(0) }
     var babyGuapa by rememberSaveable { mutableStateOf(0) }
-    
-    // Sin Calidad (SC) counters
-    var c5SC by rememberSaveable { mutableStateOf(0) }
-    var c6SC by rememberSaveable { mutableStateOf(0) }
-    var c7SC by rememberSaveable { mutableStateOf(0) }
-    var c8PSC by rememberSaveable { mutableStateOf(0) }
-    var c8SC by rememberSaveable { mutableStateOf(0) }
-    var c9SC by rememberSaveable { mutableStateOf(0) }
-    var c10SC by rememberSaveable { mutableStateOf(0) }
-    var guapitaSC by rememberSaveable { mutableStateOf(0) }
-    var babyGuapaSC by rememberSaveable { mutableStateOf(0) }
+
 
     // Non-recovered fruit counters
     var ausente by rememberSaveable { mutableStateOf(0) }
@@ -831,12 +828,12 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
 
     // REAL-TIME TOTALS
     val calidadTotal by remember { derivedStateOf { c5 + c6 + c7 + c8P + c8 + c9 + c10 + guapita + babyGuapa } }
-    val calidadSCTotal by remember { derivedStateOf { c5SC + c6SC + c7SC + c8PSC + c8SC + c9SC + c10SC + guapitaSC + babyGuapaSC } }
     val noRecTotal by remember { derivedStateOf { ausente + dano + sinInducir + bajoPeso + muestreo + frutaJoven } }
     val noRecCalTotal by remember { derivedStateOf { nonRecoveredByCalibre.values.sum() } }
     val fueraEspecTotal by remember { derivedStateOf { fueraEspecificacionCounters.values.sum() } }
     val fueraEspecSCTotal by remember { derivedStateOf { fueraEspecificacionSCCounters.values.sum() } }
-    val totalGeneral by remember { derivedStateOf { calidadTotal + calidadSCTotal + noRecTotal + noRecCalTotal + fueraEspecTotal + fueraEspecSCTotal } }
+    val totalGeneral by remember { derivedStateOf { calidadTotal + noRecTotal + noRecCalTotal + fueraEspecTotal + fueraEspecSCTotal } }
+
 
 
     Scaffold(
@@ -1232,7 +1229,6 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                         grupoForza = grupoForza,
                         bloque = bloque,
                         calidadTotal = calidadTotal,
-                        calidadSinCalidadTotal = calidadSCTotal,
                         noRecuperadaTotal = noRecTotal,
                         noRecuperadaCalibreTotal = noRecCalTotal,
                         fueraEspecTotal = fueraEspecTotal,
@@ -1240,10 +1236,6 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                         calidadCounts = mapOf(
                             "C5" to c5, "C6" to c6, "C7" to c7, "C8P" to c8P, "C8" to c8, "C9" to c9,
                             "C10" to c10, "Guapita" to guapita, "Baby Guapa" to babyGuapa
-                        ),
-                        calidadSinCalidadCounts = mapOf(
-                            "C5" to c5SC, "C6" to c6SC, "C7" to c7SC, "C8P" to c8PSC, "C8" to c8SC, "C9" to c9SC,
-                            "C10" to c10SC, "Guapita" to guapitaSC, "Baby Guapa" to babyGuapaSC
                         ),
                         noRecuperadaCounts = mapOf(
                             "Ausente" to ausente, "Daño" to dano, "Sin Inducir" to sinInducir,
@@ -1253,6 +1245,7 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                         fueraEspecCounts = fueraEspecificacionCounters.toMap(),
                         fueraEspecSinCalidadCounts = fueraEspecificacionSCCounters.toMap()
                     )
+
 
                     saveEstimation(context, r)
                     Toast.makeText(context, "Datos guardados correctamente", Toast.LENGTH_SHORT).show()
@@ -1266,8 +1259,8 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     
                     // Reset counters
                     c5 = 0; c6 = 0; c7 = 0; c8P = 0; c8 = 0; c9 = 0; c10 = 0; guapita = 0; babyGuapa = 0
-                    c5SC = 0; c6SC = 0; c7SC = 0; c8PSC = 0; c8SC = 0; c9SC = 0; c10SC = 0; guapitaSC = 0; babyGuapaSC = 0
                     ausente = 0; dano = 0; sinInducir = 0; bajoPeso = 0; muestreo = 0; frutaJoven = 0
+
                     
                     // Clear and re-initialize maps
                     nonRecoveredByCalibre.clear()
