@@ -69,9 +69,10 @@ import kotlinx.coroutines.launch
 import com.example.aplicativoestimaciones.ui.theme.AplicativoEstimacionesTheme
 
 val CALIBRES = listOf("C5", "C6", "C7", "C8P", "C8", "C9", "C10", "Guapita", "Baby Guapa")
-val DEFECTOS = listOf("Enferma", "Quema Sol Severo", "Deforme", "Daño Insecto", "Daño Mecánico")
-val FUERA_ESPEC_CATS = listOf("Cuello", "Cónica", "Cicatriz", "Base café", "Corona Pequeña", "Corona Grande", "Corona Múltiple", "Cochinilla", "Off Color", "Quema Sol Leve", "Quema Sol Severa")
+val DEFECTOS = listOf("Enferma", "Deforme", "Daño Insecto", "Daño Mecánico")
+val FUERA_ESPEC_CATS = listOf("Cuello", "Cónica", "Cicatriz", "Base café", "Corona Pequeña", "Corona Grande", "Corona Múltiple", "Cochinilla", "Off Color", "Quema Sol Leve", "Quema Sol Severa", "Corona Inclinada Leve", "Corona Inclinada Severa")
 val FUERA_ESPEC_SINGLE = "Deforme"
+
 val FUERA_ESPEC_ADELANTADA = "Fruta Adelantada"
 val ESPEC_TYPES = listOf("Tolerable", "No Tolerable")
 
@@ -497,8 +498,9 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
 
     
     // No Recuperada (Simple) breakdown
-    val noRecCats = listOf("Ausente", "Daño", "Sin Inducir", "Bajo Peso", "Muestreo", "Fruta Joven")
+    val noRecCats = listOf("Ausente", "Sin Inducir", "Bajo Peso", "Muestreo", "Fruta Joven")
     noRecCats.forEach { sb.append(",NoRec_$it") }
+
     
     // No Recuperada Calibre matrix
     DEFECTOS.forEach { defecto ->
@@ -543,6 +545,7 @@ fun exportRecordsToCSV(context: Context, records: List<EstimationRecord>) {
         
         // No Recuperada (Simple) counts
         noRecCats.forEach { sb.append(",${r.noRecuperadaCounts[it] ?: 0}") }
+
         
         // No Recuperada Calibre counts
         DEFECTOS.forEach { defecto ->
@@ -774,11 +777,11 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
 
     // Non-recovered fruit counters
     var ausente by rememberSaveable { mutableStateOf(0) }
-    var dano by rememberSaveable { mutableStateOf(0) }
     var sinInducir by rememberSaveable { mutableStateOf(0) }
     var bajoPeso by rememberSaveable { mutableStateOf(0) }
     var muestreo by rememberSaveable { mutableStateOf(0) }
     var frutaJoven by rememberSaveable { mutableStateOf(0) }
+
 
     // Multi-level counters for Non-Recovered by Calibre
     val nonRecoveredByCalibre = rememberSaveable(saver = MapSaver) { mutableStateMapOf<String, Int>() }
@@ -801,10 +804,16 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
     
     val displayedCats = remember(selectedQualityTab) {
         FUERA_ESPEC_CATS.filter { cat ->
-            if (selectedQualityTab == 0) cat != "Quema Sol Severa"
-            else cat != "Quema Sol Leve"
+            if (selectedQualityTab == 0) {
+                // HIDE from Quality
+                cat != "Quema Sol Severa" && cat != "Cochinilla" && cat != "Corona Múltiple" && cat != "Corona Inclinada Severa"
+            } else {
+                // HIDE from Non-Quality
+                cat != "Quema Sol Leve" && cat != "Corona Inclinada Leve"
+            }
         }
     }
+
     
     LaunchedEffect(Unit) {
         if (fueraEspecificacionCounters.isEmpty()) {
@@ -828,7 +837,8 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
 
     // REAL-TIME TOTALS
     val calidadTotal by remember { derivedStateOf { c5 + c6 + c7 + c8P + c8 + c9 + c10 + guapita + babyGuapa } }
-    val noRecTotal by remember { derivedStateOf { ausente + dano + sinInducir + bajoPeso + muestreo + frutaJoven } }
+    val noRecTotal by remember { derivedStateOf { ausente + sinInducir + bajoPeso + muestreo + frutaJoven } }
+
     val noRecCalTotal by remember { derivedStateOf { nonRecoveredByCalibre.values.sum() } }
     val fueraEspecTotal by remember { derivedStateOf { fueraEspecificacionCounters.values.sum() } }
     val fueraEspecSCTotal by remember { derivedStateOf { fueraEspecificacionSCCounters.values.sum() } }
@@ -1151,7 +1161,6 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     Spacer(modifier = Modifier.height(6.dp))
                     
                     CompactCounterRow("Ausente", ausente) { ausente = it }
-                    CompactCounterRow("Daño", dano) { dano = it }
                     CompactCounterRow("Sin Inducir", sinInducir) { sinInducir = it }
                     CompactCounterRow("Bajo Peso", bajoPeso) { bajoPeso = it }
                     CompactCounterRow("Muestreo", muestreo) { muestreo = it }
@@ -1239,9 +1248,10 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                             "C10" to c10, "Guapita" to guapita, "Baby Guapa" to babyGuapa
                         ),
                         noRecuperadaCounts = mapOf(
-                            "Ausente" to ausente, "Daño" to dano, "Sin Inducir" to sinInducir,
+                            "Ausente" to ausente, "Sin Inducir" to sinInducir,
                             "Bajo Peso" to bajoPeso, "Muestreo" to muestreo, "Fruta Joven" to frutaJoven
                         ),
+
                         noRecCalibreCounts = nonRecoveredByCalibre.toMap(),
                         fueraEspecCounts = fueraEspecificacionCounters.toMap(),
                         fueraEspecSinCalidadCounts = fueraEspecificacionSCCounters.toMap()
@@ -1260,7 +1270,8 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     
                     // Reset counters
                     c5 = 0; c6 = 0; c7 = 0; c8P = 0; c8 = 0; c9 = 0; c10 = 0; guapita = 0; babyGuapa = 0
-                    ausente = 0; dano = 0; sinInducir = 0; bajoPeso = 0; muestreo = 0; frutaJoven = 0
+                    ausente = 0; sinInducir = 0; bajoPeso = 0; muestreo = 0; frutaJoven = 0
+
 
                     
                     // Clear and re-initialize maps
