@@ -197,13 +197,13 @@ private fun persistFullList(context: Context, list: List<EstimationRecord>) {
             put("grupoForza", r.grupoForza)
             put("bloque", r.bloque)
             put("calidad", r.calidadTotal)
-            put("calidadSC", r.calidadSinCalidadTotal)
+
             put("noRecTotal", r.noRecuperadaTotal)
             put("noRecCalTotal", r.noRecuperadaCalibreTotal)
             put("fueraEspec", r.fueraEspecTotal)
             put("fueraEspecSC", r.fueraEspecSinCalidadTotal)
             put("calidadCounts", JSONObject(r.calidadCounts))
-            put("calidadSCCounts", JSONObject(r.calidadSinCalidadCounts))
+
             put("noRecCounts", JSONObject(r.noRecuperadaCounts))
             put("noRecCalCounts", JSONObject(r.noRecCalibreCounts))
             put("fueraEspecCounts", JSONObject(r.fueraEspecCounts))
@@ -879,9 +879,9 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                         Column {
                             Text("Calidad: $calidadTotal", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold)
-                            Text("Sin Calidad: $calidadSCTotal", style = MaterialTheme.typography.labelSmall, fontWeight = FontWeight.SemiBold, color = Color.Red)
                             Text("No Rec.: $noRecTotal", style = MaterialTheme.typography.labelSmall)
                         }
+
                         Column(horizontalAlignment = Alignment.End, modifier = Modifier.weight(1f)) {
                             Text("No Rec. Cal: $noRecCalTotal", style = MaterialTheme.typography.labelSmall)
                             Text("F. Espec.: $fueraEspecTotal", style = MaterialTheme.typography.labelSmall)
@@ -1028,9 +1028,10 @@ fun IngresarDatosScreen(onBack: () -> Unit) {
                 Column(modifier = Modifier.padding(12.dp)) {
                     Row(modifier = Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
                         Text("Fruta Calidad (Matriz)", style = MaterialTheme.typography.titleMedium, fontWeight = FontWeight.Bold, color = MaterialTheme.colorScheme.primary)
-                        val totalTab = if (selectedQualityTab == 0) calidadTotal + fueraEspecTotal else calidadSCTotal + fueraEspecSCTotal
+                        val totalTab = if (selectedQualityTab == 0) calidadTotal + fueraEspecTotal else fueraEspecSCTotal
                         Text("Total Pestaña: $totalTab", style = MaterialTheme.typography.labelLarge, fontWeight = FontWeight.ExtraBold, color = if (selectedQualityTab == 1) Color.Red else Color.Black)
                     }
+
                     Spacer(modifier = Modifier.height(8.dp))
                     
                     // --- TAB SELECTION ---
